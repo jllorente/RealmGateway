@@ -3,15 +3,15 @@
 ## description: Development VM for Realm Gateway & Customer Edge Switching
 
 Vagrant.configure(2) do |config|
-    ## public.demo
-    config.vm.define "public" do |node|
-        node.vm.hostname = "public"
+    ## proxygwa.demo
+    config.vm.define "proxygwa" do |node|
+        node.vm.hostname = "proxygwa"
 
         # Configure shared folders
         node.vm.synced_folder ".", "/vagrant", disabled: true
         # Use one-off file provisioner maintaining file permission
         node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
-        node.vm.provision "file", source: "./public/rootfs", destination: "/var/tmp/rootfs"
+        node.vm.provision "file", source: "./proxygwa/rootfs", destination: "/var/tmp/rootfs"
 
         # Install apt package dependencies
         node.vm.provision "shell", inline: <<-SHELL
@@ -19,12 +19,14 @@ Vagrant.configure(2) do |config|
             unlink /etc/resolv.conf || true
             echo 'nameserver 8.8.8.8' > /etc/resolv.conf
             apt install -y apt-transport-https && apt update
-            apt install -y arping dnsutils ethtool tcpdump lksctp-tools
-<<<<<<< HEAD
-            apt install -y ftp vsftpd iperf
-=======
-            apt install -y ftp vsftpd
->>>>>>> 00e4d588582f55f871cf7dcd7ca9ddfdc93e4944
+            apt install -y arping dnsutils ethtool tcpdump
+            apt install -y iptables ipset git openvswitch-switch openvswitch-vtep python3-pip
+        SHELL
+
+        # Install Python dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            python3 -m pip install --upgrade pip setuptools
+            python3 -m pip install --upgrade --use-feature=2020-resolver python-iptables
         SHELL
 
         # Configure common services
@@ -38,14 +40,22 @@ Vagrant.configure(2) do |config|
 
         # Configure specific services
         node.vm.provision "shell", inline: <<-SHELL
-            echo 'nameserver 100.64.0.1' > /etc/resolv.conf
-            ip route change default via 100.64.0.1
-            systemctl restart vsftpd
+            # HACK: Get library from Github
+            git clone https://github.com/jllorente/helpers_n_wrappers /usr/lib/python3/dist-packages/helpers_n_wrappers || true
+            # Remove default gateway due to custom routing
+            ip route delete default
+            # Default operation mode - pseudowire
+            systemctl enable synproxy-disable
+            systemctl start  synproxy-disable
         SHELL
 
         # Configure container networking
         node.vm.provider :lxc do |lxc|
             lxc.container_name = :machine
+
+            # Added for testing Netmap / Modify as "ls -lah /dev/netmap"
+            lxc.customize "cgroup.devices.allow", "c 10:54 rwm"
+            lxc.customize "apparmor.profile",     "unconfined"
 
             # Clear network configuration
             lxc.customize "net", ""
@@ -55,28 +65,23 @@ Vagrant.configure(2) do |config|
             lxc.customize "net.0.flags",        "up"
             lxc.customize "net.0.link",         "br-mgt0"
             lxc.customize "net.0.name",         "mgt0"
-            lxc.customize "net.0.veth.pair",    "public-mgt0"
-            lxc.customize "net.0.ipv4.address", "10.0.0.13/24"
+            lxc.customize "net.0.veth.pair",    "proxygwa-mgt0"
+            lxc.customize "net.0.ipv4.address", "10.0.0.14/24"
             lxc.customize "net.0.ipv4.gateway", "10.0.0.1"
 
-            # WAN interface
+            # WAN interface - wild
             lxc.customize "net.1.type",         "veth"
             lxc.customize "net.1.flags",        "up"
-            lxc.customize "net.1.link",         "br-wan0"
+            lxc.customize "net.1.link",         "br-wan1"
             lxc.customize "net.1.name",         "wan0"
-            lxc.customize "net.1.veth.pair",    "public-wan0"
-            lxc.customize "net.1.ipv4.address", "100.64.0.100/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.101/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.102/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.103/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.104/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.105/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.106/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.107/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.108/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.109/24"
-            lxc.customize "net.1.ipv4.address", "100.64.0.110/24"
-            #lxc.customize "net.1.ipv4.gateway", "100.64.0.1"
+            lxc.customize "net.1.veth.pair",    "proxygwa-wan0"
+
+            # WAN interface - safe
+            lxc.customize "net.2.type",         "veth"
+            lxc.customize "net.2.flags",        "up"
+            lxc.customize "net.2.link",         "br-wan1-gwa"
+            lxc.customize "net.2.name",         "wan0p"
+            lxc.customize "net.2.veth.pair",    "proxygwa-wan0p"
         end
     end
 end
