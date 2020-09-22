@@ -53,13 +53,13 @@ logging.basicConfig(level=LOGLEVEL)
 # Define variables
 SYSEXEC_BACKOFF = 0.25
 LXC_CT_BASENAME = 'ctbase'
-RESOURCE_PATH = './resources'
-CONFIG_FILE   = './resources/config'
+RESOURCE_PATH = os.getenv('RESOURCE_PATH', 'resources')
+CONFIG_FILE   = RESOURCE_PATH + '/config'
 CTUSER='ubuntu'
 CTPASSWORD='ubuntu'
 # Define pre/post scripts
-SCRIPT_PRE_UP='./resources/pre-up.sh'
-SCRIPT_POST_DOWN='./resources/post-down.sh'
+SCRIPT_PRE_UP = RESOURCE_PATH + '/pre-up.sh'
+SCRIPT_POST_DOWN = RESOURCE_PATH + '/post-down.sh'
 
 def sanitize_line(text, comment='#', token=''):
     if text.startswith(comment):
@@ -77,7 +77,7 @@ def get_key_value(text, token=''):
 class LxcEnvironment(object):
     def __init__(self, ctbasename, configfile):
         self.logger = logging.getLogger()
-        self.config = yaml.load(open(configfile, 'r'))
+        self.config = yaml.safe_load(open(configfile, 'r'))
         self.ctbasename = ctbasename
         self.ct_clone = self._ct_clone_lib
         self.ct_start = self._ct_start_lib

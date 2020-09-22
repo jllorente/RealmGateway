@@ -61,7 +61,7 @@ cd /customer_edge_switching_v2/src
           --repository-policy-folder     ../config.d/gwa.demo.policy.d/      \
           --repository-api-url  http://127.0.0.1:8082/                       \
           --network-api-url     http://127.0.0.1:8081/                       \
-          --synproxy         172.31.255.14 12345
+          --synproxy         10.0.0.14 12345
 ```
 
 
@@ -333,9 +333,9 @@ tc qdisc change dev eth0 root netem delay 1000ms 50ms
 tc qdisc del    dev eth0 root
 ```
 
-- Increase the qlen size of your virtual adaptors. We have witnessed how veth pairs with qlen=1000 have resulted in packet loss when testing >2000 new TCP connections per second. Experimentally we have used the value qlen=25000.
+- Increase the txqueuelen size of your virtual adaptors. We have witnessed how veth pairs with txqueuelen=1000 have resulted in packet loss when testing >2000 new TCP connections per second. Experimentally we have used the value txqueuelen=25000.
 ```
-ip link set dev eth0 qlen 25000
+ip link set dev eth0 txqueuelen 25000
 ```
 
 
