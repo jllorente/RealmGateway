@@ -2,7 +2,7 @@
 
 if [[ $UID != 0 ]]; then
     echo "Please run this script with sudo:"
-    echo "$0 $*"
+    echo "sudo $0 $*"
     exit 1
 fi
 
@@ -28,12 +28,12 @@ ip link set dev mitm0 up
 ip link set dev mitm1 up
 
 # Configure txqueuelen of interfaces / default is 1000
-MAX_QLEN=25000
-ip link set dev wan0        qlen $MAX_QLEN
-ip link set dev wan0p       qlen $MAX_QLEN
-ip link set dev mitm0       qlen $MAX_QLEN
-ip link set dev mitm1       qlen $MAX_QLEN
-ip link set dev br-synproxy qlen $MAX_QLEN
+TXQUEUELEN=25000
+ip link set dev wan0        txqueuelen $TXQUEUELEN
+ip link set dev wan0p       txqueuelen $TXQUEUELEN
+ip link set dev mitm0       txqueuelen $TXQUEUELEN
+ip link set dev mitm1       txqueuelen $TXQUEUELEN
+ip link set dev br-synproxy txqueuelen $TXQUEUELEN
 
 # Configure Man-In-The-Middle interface
 ip link set dev mitm0 arp off
