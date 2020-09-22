@@ -1,0 +1,105 @@
+## author:      jesus.llorente@gmail.com
+## date:        10/09/2020
+## description: Development VM for Realm Gateway & Customer Edge Switching
+
+Vagrant.configure(2) do |config|
+    ## gwa.demo
+    config.vm.define "gwa" do |node|
+        node.vm.hostname = "gwa"
+
+        # Configure shared folders
+        node.vm.synced_folder ".", "/vagrant", disabled: true
+        # Use one-off file provisioner maintaining file permission
+        node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
+        node.vm.provision "file", source: "./gwa/rootfs",    destination: "/var/tmp/rootfs"
+        # This shared mount does not preserve permissions, but it remains _up-to-date_
+        node.vm.synced_folder "/realmgateway", "/realmgateway"
+
+        # Install apt package dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            export DEBIAN_FRONTEND=noninteractive
+            unlink /etc/resolv.conf || true
+            echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+            apt install -y apt-transport-https && apt update
+            apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
+            apt install -y iptables ipset python3-yaml openvswitch-switch openvswitch-vtep
+            apt install -y dnsutils curl htop ethtool isc-dhcp-server dnsmasq nginx tmux tree psmisc tmux tcpdump
+        SHELL
+
+        # Install Python dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            python3 -m pip install --upgrade pip setuptools
+            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython NetfilterQueue python-iptables pyroute2 ryu scapy
+        SHELL
+
+        # Configure common services
+        node.vm.provision "shell", inline: <<-SHELL
+            systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
+            cp -R /var/tmp/rootfs/* /
+            systemctl daemon-reload
+            systemctl enable runatstartup
+            systemctl start runatstartup
+        SHELL
+
+        # Configure specific services
+        node.vm.provision "shell", inline: <<-SHELL
+            echo 'nameserver 100.64.0.1' > /etc/resolv.conf
+            ip route change default via 100.64.1.1
+            # Restart sidecar service(s)
+            systemctl restart dnsmasq
+            systemctl restart isc-dhcp-server
+            systemctl restart nginx
+            # Enable realmgateway service(s)
+            systemctl enable sdn-controller
+            systemctl enable realmgateway
+            systemctl start  sdn-controller
+            systemctl start  realmgateway
+        SHELL
+
+        # Configure container networking
+        node.vm.provider :lxc do |lxc|
+            lxc.container_name = :machine
+
+            # Clear network configuration
+            lxc.customize "net", ""
+
+            # Management interface
+            lxc.customize "net.0.type",         "veth"
+            lxc.customize "net.0.flags",        "up"
+            lxc.customize "net.0.link",         "br-mgt0"
+            lxc.customize "net.0.name",         "mgt0"
+            lxc.customize "net.0.veth.pair",    "gwa-mgt0"
+            lxc.customize "net.0.ipv4.address", "10.0.0.11/24"
+            lxc.customize "net.0.ipv4.gateway", "10.0.0.1"
+
+            # WAN interface
+            lxc.customize "net.1.type",         "veth"
+            lxc.customize "net.1.flags",        "up"
+            lxc.customize "net.1.link",         "br-wan1-gwa"
+            lxc.customize "net.1.name",         "wan0"
+            lxc.customize "net.1.veth.pair",    "gwa-wan0"
+            lxc.customize "net.1.ipv4.address", "100.64.1.130/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.131/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.132/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.133/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.134/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.135/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.136/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.137/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.138/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.139/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.140/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.141/24"
+            lxc.customize "net.1.ipv4.address", "100.64.1.142/24"
+            #lxc.customize "net.0.ipv4.gateway", "100.64.1.1"
+
+            # LAN interface
+            lxc.customize "net.2.type",         "veth"
+            lxc.customize "net.2.flags",        "up"
+            lxc.customize "net.2.link",         "br-lan0-gwa"
+            lxc.customize "net.2.name",         "lan0"
+            lxc.customize "net.2.veth.pair",    "gwa-lan0"
+            lxc.customize "net.2.ipv4.address", "192.168.0.1/24"
+        end
+    end
+end

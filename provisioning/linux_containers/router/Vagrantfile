@@ -1,0 +1,87 @@
+## author:      jesus.llorente@gmail.com
+## date:        10/09/2020
+## description: Development VM for Realm Gateway & Customer Edge Switching
+
+Vagrant.configure(2) do |config|
+    ## router.demo
+    config.vm.define "router" do |node|
+        node.vm.hostname = "router"
+
+        # Configure shared folders
+        node.vm.synced_folder ".", "/vagrant", disabled: true
+        # Use one-off file provisioner maintaining file permission
+        node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
+        node.vm.provision "file", source: "./router/rootfs", destination: "/var/tmp/rootfs"
+
+        # Install apt package dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            export DEBIAN_FRONTEND=noninteractive
+            unlink /etc/resolv.conf || true
+            echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+            apt install -y apt-transport-https && apt update
+            apt install -y arping dnsutils ethtool tcpdump
+            apt install -y bind9 dnsmasq ipset iptables
+        SHELL
+
+        # Configure common services
+        node.vm.provision "shell", inline: <<-SHELL
+            systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
+            cp -R /var/tmp/rootfs/* /
+            systemctl daemon-reload
+            systemctl enable runatstartup
+            systemctl start runatstartup
+        SHELL
+
+        # Configure specific services
+        node.vm.provision "shell", inline: <<-SHELL
+            echo 'nameserver 127.0.0.1' > /etc/resolv.conf
+            ip route change default via 100.64.0.254
+            systemctl restart bind9
+            systemctl restart dnsmasq
+            systemctl enable synproxy-iptables
+            systemctl start  synproxy-iptables
+        SHELL
+
+        # Configure container networking
+        node.vm.provider :lxc do |lxc|
+            lxc.container_name = :machine
+
+            # Clear network configuration
+            lxc.customize "net", ""
+
+            # Management interface
+            lxc.customize "net.0.type",         "veth"
+            lxc.customize "net.0.flags",        "up"
+            lxc.customize "net.0.link",         "br-mgt0"
+            lxc.customize "net.0.name",         "mgt0"
+            lxc.customize "net.0.veth.pair",    "router-mgt0"
+            lxc.customize "net.0.ipv4.address", "10.0.0.10/24"
+            lxc.customize "net.0.ipv4.gateway", "10.0.0.1"
+
+            # WAN interface
+            lxc.customize "net.1.type",         "veth"
+            lxc.customize "net.1.flags",        "up"
+            lxc.customize "net.1.link",         "br-wan0"
+            lxc.customize "net.1.name",         "wan0"
+            lxc.customize "net.1.veth.pair",    "router-wan0"
+            lxc.customize "net.1.ipv4.address", "100.64.0.1/24"
+            #lxc.customize "net.1.ipv4.gateway", "100.64.0.254"
+
+            # WAN interface
+            lxc.customize "net.2.type",         "veth"
+            lxc.customize "net.2.flags",        "up"
+            lxc.customize "net.2.link",         "br-wan1"
+            lxc.customize "net.2.name",         "wan1"
+            lxc.customize "net.2.veth.pair",    "router-wan1"
+            lxc.customize "net.2.ipv4.address", "100.64.1.1/24"
+
+            # WAN interface
+            lxc.customize "net.3.type",         "veth"
+            lxc.customize "net.3.flags",        "up"
+            lxc.customize "net.3.link",         "br-wan2"
+            lxc.customize "net.3.name",         "wan2"
+            lxc.customize "net.3.veth.pair",    "router-wan2"
+            lxc.customize "net.3.ipv4.address", "100.64.2.1/24"
+        end
+    end
+end
