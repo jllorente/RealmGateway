@@ -9,7 +9,8 @@ fi
 echo "Starting Realm Gateway as gwa.demo"
 cd src
 ./rgw.py  --name gwa.demo                                                    \
-          --dns-soa gwa.demo. 0.168.192.in-addr.arpa. 1.64.100.in-addr.arpa. \
+          --dns-soa gwa.demo. dnssec-gwa.demo. 0.168.192.in-addr.arpa. 1.64.100.in-addr.arpa. \
+          --dns-cname-soa dnssec-gwa.demo.                                   \
           --dns-server-local 127.0.0.1 53                                    \
           --dns-server-lan   192.168.0.1 53                                  \
           --dns-server-wan   100.64.1.130 53                                 \

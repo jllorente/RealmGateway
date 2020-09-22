@@ -33,3 +33,19 @@ ip address flush dev br-wan0
 ip address add 100.64.0.254/24 dev br-wan0
 ## Set default gateway via br-wan0 in host to control NATting
 ip route add 100.64.0.0/16 via 100.64.0.1
+
+# Add static host entries
+cat <<EOF >> /etc/hosts
+172.31.255.10       router
+172.31.255.11       gwa
+172.31.255.12       gwb
+172.31.255.13       public
+172.31.255.14       proxya
+172.31.255.15       proxyb
+172.31.255.16       test_gwa
+172.31.255.17       test_gwb
+172.31.255.21       nest_gwa
+172.31.255.22       nest_gwb
+172.31.255.26       test_ngwa
+172.31.255.27       test_ngwb
+EOF

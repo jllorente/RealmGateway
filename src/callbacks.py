@@ -321,7 +321,7 @@ class DNSCallbacks(object):
         # TODO: Modify this to propagate original queries if carriergrade, and only override certain types, e.g. dns.rdatatype.A,
 
         # Evaluate host and service
-        if service_data['carriergrade'] is True:
+        if service_data and service_data['carriergrade'] is True:
             # Resolve via CarrierGrade
 
             # Answer with empty records for other types not A
