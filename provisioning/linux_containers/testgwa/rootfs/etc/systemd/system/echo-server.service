@@ -1,0 +1,15 @@
+[Unit]
+Description=Create multiple TCP/UDP echo endpoints
+
+[Service]
+Environment=IP_FIRST=192.168.0.101
+Environment=IP_LAST=192.168.0.250
+Environment=PORT_FIRST=2000
+Environment=PORT_LAST=2009
+
+ExecStartPre=/bin/bash -c "for ip in `prips $IP_FIRST $IP_LAST`; do ip address add $ip/24 dev lan0; done"
+ExecStopPost=/bin/bash -c "for ip in `prips $IP_FIRST $IP_LAST`; do ip address del $ip/24 dev lan0; done"
+ExecStart=/usr/local/bin/echoserver.sh
+
+[Install]
+WantedBy=multi-user.target
