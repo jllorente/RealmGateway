@@ -1,0 +1,52 @@
+TODO:
+
+Improve documentation and readme in orchestration
+Add network diagrams and tmux scripts to start up
+
+> Configure local networking with MASQUERADE: NIC="$(ip route show | grep default | awk '{ print $5}')"
+
+Issues with default script
+root@realm-gateway:/git/RealmGateway# ./run_gwa_netns.sh
+Starting Realm Gateway as gwa.demo
+usage: rgw.py [-h] --name NAME --dns-soa [DNS_SOA [DNS_SOA ...]]
+              --dns-cname-soa [DNS_CNAME_SOA [DNS_CNAME_SOA ...]]
+              [--dns-server-local IPADDR PORT] [--dns-server-lan IPADDR PORT]
+              [--dns-server-wan IPADDR PORT] [--dns-resolver IPADDR PORT]
+              [--ddns-server IPADDR PORT]
+              [--dns-timeout DNS_TIMEOUT [DNS_TIMEOUT ...]]
+              [--dns-timeout-a DNS_TIMEOUT_A [DNS_TIMEOUT_A ...]]
+              [--dns-timeout-aaaa DNS_TIMEOUT_AAAA [DNS_TIMEOUT_AAAA ...]]
+              [--dns-timeout-srv DNS_TIMEOUT_SRV [DNS_TIMEOUT_SRV ...]]
+              [--dns-timeout-naptr DNS_TIMEOUT_NAPTR [DNS_TIMEOUT_NAPTR ...]]
+              [--pool-serviceip [IPADDR [IPADDR ...]]]
+              [--pool-cpoolip [IPADDR [IPADDR ...]]]
+              [--ipt-cpool-queue [QUEUENUM [QUEUENUM ...]]]
+              [--ipt-cpool-chain IPT_CPOOL_CHAIN]
+              [--ipt-host-chain IPT_HOST_CHAIN]
+              [--ipt-host-unknown IPT_HOST_UNKNOWN]
+              [--ipt-policy-order [IPT_POLICY_ORDER [IPT_POLICY_ORDER ...]]]
+              [--ipt-markdnat] [--ipt-flush] [--ips-hosts IPS_HOSTS]
+              [--network-api-url URL] [--repository-api-url URL]
+              [--repository-subscriber-file FILENAME]
+              [--repository-subscriber-folder FOLDERNAME]
+              [--repository-policy-file FILENAME]
+              [--repository-policy-folder FOLDERNAME] [--synproxy IPADDR PORT]
+rgw.py: error: the following arguments are required: --dns-cname-soa
+
+
+NETNS mode
+from test_gwa in netns this breaks
+dig -x 192.168.0.100
+
+future: <Task finished coro=<DNSCallbacks.dns_process_rgw_lan_soa() done, defined at /realmgateway/src/callbacks.py:287> excep
+tion=TypeError("'NoneType' object is not subscriptable")>
+Traceback (most recent call last):
+  File "/realmgateway/src/callbacks.py", line 324, in dns_process_rgw_lan_soa
+    if service_data['carriergrade'] is True:
+TypeError: 'NoneType' object is not subscriptable
+
+
+Using a different CNAME SOA returns the private IP ?
+
+;; ANSWER SECTION:
+7l5i4lp28m87c9jadw3e6ugxavzg7ewt.secured-gwa.demo. 30 IN A 192.168.0.100

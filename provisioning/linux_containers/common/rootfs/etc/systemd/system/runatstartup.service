@@ -1,0 +1,10 @@
+[Unit]
+Description=run script(s) at startup
+
+[Service]
+WorkingDirectory=/
+ExecStart=/sbin/runatstartup
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

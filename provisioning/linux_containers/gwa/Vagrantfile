@@ -12,7 +12,11 @@ Vagrant.configure(2) do |config|
         # Use one-off file provisioner maintaining file permission
         node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
         node.vm.provision "file", source: "./gwa/rootfs",    destination: "/var/tmp/rootfs"
+<<<<<<< HEAD
         # This shared mount does not preserve permissions but it remains _up-to-date_ for running code
+=======
+        # This shared mount does not preserve permissions, but it remains _up-to-date_
+>>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
         node.vm.synced_folder "/realmgateway", "/realmgateway"
 
         # Install apt package dependencies
@@ -43,14 +47,21 @@ Vagrant.configure(2) do |config|
 
         # Configure specific services
         node.vm.provision "shell", inline: <<-SHELL
+<<<<<<< HEAD
             # User router as resolver and default gateway
+=======
+>>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
             echo 'nameserver 100.64.0.1' > /etc/resolv.conf
             ip route change default via 100.64.1.1
             # Restart sidecar service(s)
             systemctl restart dnsmasq
             systemctl restart isc-dhcp-server
             systemctl restart nginx
+<<<<<<< HEAD
             # Enable & start realmgateway service(s)
+=======
+            # Enable realmgateway service(s)
+>>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
             systemctl enable sdn-controller
             systemctl enable realmgateway
             systemctl start  sdn-controller
