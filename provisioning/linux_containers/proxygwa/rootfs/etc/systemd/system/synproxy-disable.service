@@ -1,0 +1,11 @@
+[Unit]
+Description=Stop any running TCP Synproxy instance (iptables or netmap)
+
+[Service]
+ExecStartPre=/bin/systemctl stop synproxy-iptables
+ExecStartPre=/bin/systemctl stop synproxy-netmap
+ExecStart=/sbin/pseudowire.sh
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

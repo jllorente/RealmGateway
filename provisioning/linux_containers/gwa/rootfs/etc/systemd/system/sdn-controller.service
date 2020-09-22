@@ -1,0 +1,16 @@
+[Unit]
+Description=Ruy SDN controller for local OpenvSwitch instances
+After=openvswitch-switch.service
+
+[Service]
+ExecStart=/usr/local/bin/ryu-manager    \
+            --ofp-listen-host 127.0.0.1 \
+            --ofp-tcp-listen-port 6653  \
+            --wsapi-host 127.0.0.1      \
+            --wsapi-port 8081           \
+            --verbose                   \
+            /usr/local/lib/python3.6/dist-packages/ryu/app/ofctl_rest.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Netmap implementation of inline TCP synproxy
+After=openvswitch-switch.service
+
+[Service]
+WorkingDirectory=/home/vagrant
+ExecStartPre=/bin/systemctl stop synproxy-disable
+ExecStartPre=/bin/systemctl stop synproxy-iptables
+# Create Netmap file / See host's mounting point! "ls -lah /dev/netmap"
+ExecStartPre=/bin/bash -c "/bin/mknod /dev/netmap c 10 54 || true"
+ExecStartPre=/usr/bin/ovs-vsctl --if-exists del-br br-synproxy
+ExecStart=/home/vagrant/nmsynproxy/nmsynproxy netmap:wan0p netmap:wan0
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
