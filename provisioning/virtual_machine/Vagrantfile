@@ -13,6 +13,8 @@ Vagrant.configure(2) do |config|
         #node.vm.box = "debian/contrib-buster64"
         node.vm.box = "ubuntu/bionic64"
         node.vm.hostname = "rgw-dev"
+        # requires: vagrant plugin install vagrant-disksize
+        node.disksize.size = '50GB'
 
         # Configure VM specs
         node.vm.provider "virtualbox" do |vbox|
@@ -35,9 +37,10 @@ Vagrant.configure(2) do |config|
             apt install -y apt-transport-https && apt update
             apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
             apt install -y iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
-            #apt install -y xtables-addons-common xtables-addons-dkms libelf-dev
             apt install -y iptables ipset bridge-utils lxc python3-lxc python3-yaml openvswitch-switch openvswitch-vtep
-            apt install -y dnsutils curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3
+            apt install -y dnsutils curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
+            # Add DKMS support for compiled modules?
+            # apt install -y xtables-addons-common xtables-addons-dkms libelf-dev
         SHELL
 
         # Install Python dependencies

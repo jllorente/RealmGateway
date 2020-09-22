@@ -1,1 +1,0 @@
-{"virtualbox":{"/realmgateway":{"guestpath":"/realmgateway","hostpath":"C:/Users/jesus.llorente/cygwin64/home/jesus.llorente/git/RealmGateway","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/jesus.llorente/cygwin64/home/jesus.llorente/git/RealmGateway/provisioning","disabled":false,"__vagrantfile":true}}}

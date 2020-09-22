@@ -11,3 +11,4 @@
 TODO:
  - Copy compiled netmap module to: /lib/modules/4.15.0-117-generic
  - Make own box for LXC
+ - Document vagrant plugins: vagrant plugin install vagrant-disksize (in Host)

@@ -17,11 +17,4 @@ load File.expand_path("router/Vagrantfile")   if File.exists?("router/Vagrantfil
 load File.expand_path("public/Vagrantfile")   if File.exists?("public/Vagrantfile")
 load File.expand_path("proxygwa/Vagrantfile") if File.exists?("proxygwa/Vagrantfile")
 load File.expand_path("gwa/Vagrantfile")      if File.exists?("gwa/Vagrantfile")
-<<<<<<< HEAD
 load File.expand_path("testgwa/Vagrantfile")  if File.exists?("testgwa/Vagrantfile")
-=======
-<<<<<<< HEAD
->>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
-=======
->>>>>>> 00e4d588582f55f871cf7dcd7ca9ddfdc93e4944
->>>>>>> 453bd6dfac6383d347d31bd7e0c50dcbbee962bb
