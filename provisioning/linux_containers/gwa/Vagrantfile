@@ -16,7 +16,11 @@ Vagrant.configure(2) do |config|
         # This shared mount does not preserve permissions but it remains _up-to-date_ for running code
 =======
         # This shared mount does not preserve permissions, but it remains _up-to-date_
+<<<<<<< HEAD
 >>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
+=======
+>>>>>>> 00e4d588582f55f871cf7dcd7ca9ddfdc93e4944
+>>>>>>> 453bd6dfac6383d347d31bd7e0c50dcbbee962bb
         node.vm.synced_folder "/realmgateway", "/realmgateway"
 
         # Install apt package dependencies
@@ -50,7 +54,11 @@ Vagrant.configure(2) do |config|
 <<<<<<< HEAD
             # User router as resolver and default gateway
 =======
+<<<<<<< HEAD
 >>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
+=======
+>>>>>>> 00e4d588582f55f871cf7dcd7ca9ddfdc93e4944
+>>>>>>> 453bd6dfac6383d347d31bd7e0c50dcbbee962bb
             echo 'nameserver 100.64.0.1' > /etc/resolv.conf
             ip route change default via 100.64.1.1
             # Restart sidecar service(s)
@@ -61,7 +69,11 @@ Vagrant.configure(2) do |config|
             # Enable & start realmgateway service(s)
 =======
             # Enable realmgateway service(s)
+<<<<<<< HEAD
 >>>>>>> 3c82f2c5f0e9230b5dfd511cc76da38e9c6b7064
+=======
+>>>>>>> 00e4d588582f55f871cf7dcd7ca9ddfdc93e4944
+>>>>>>> 453bd6dfac6383d347d31bd7e0c50dcbbee962bb
             systemctl enable sdn-controller
             systemctl enable realmgateway
             systemctl start  sdn-controller
