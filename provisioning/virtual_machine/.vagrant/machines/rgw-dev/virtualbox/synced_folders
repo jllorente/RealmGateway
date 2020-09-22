@@ -1,1 +1,0 @@
-{"rsync":{"/realmgateway":{"type":"rsync","rsync__args":["--verbose","--archive","-z","--copy-links"],"guestpath":"/realmgateway","hostpath":"C:/Users/jesus.llorente/cygwin64/home/jesus.llorente/git/RealmGateway","disabled":false,"__vagrantfile":true,"args":["--verbose","--archive","-z","--copy-links"],"owner":"vagrant","group":"vagrant"}}}
