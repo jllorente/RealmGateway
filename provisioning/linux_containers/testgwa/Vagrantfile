@@ -19,8 +19,8 @@ Vagrant.configure(2) do |config|
             unlink /etc/resolv.conf || true
             echo 'nameserver 8.8.8.8' > /etc/resolv.conf
             apt install -y apt-transport-https && apt update
-            apt install -y arping dnsutils ethtool tcpdump lksctp-tools
-            apt install -y ftp vsftpd iperf nginx prips
+            apt install -y arping curl dnsutils ethtool tcpdump lksctp-tools
+            apt install -y ftp vsftpd iperf nginx
         SHELL
 
         # Configure common services

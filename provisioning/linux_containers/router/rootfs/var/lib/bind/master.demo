@@ -17,6 +17,7 @@ ns1.demo.             IN    A     100.64.0.1
 ns1.gwa.demo.         IN    A     100.64.1.130
 ns1.gwb.demo.         IN    A     100.64.2.130
 public.demo.          IN    A     100.64.0.100
+router.demo.          IN    A     100.64.0.1
 
 
 ;; CNAME SOA zones

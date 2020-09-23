@@ -307,18 +307,18 @@ class SYNProxyDataplane:
             self._do_subprocess_call(_, raise_exc=True, silent=False)
 
     def ipt_init_flows(self):
-        # Specific TCP flows are inserted/appended to filter.synproxy_chain """
+        # Specific TCP flows are inserted/appended to filter.SYNPROXY_RULES """
         self._logger.info("Initialize iptables chains and rules")
 
         # Add custom chains
-        iptc_helper3.add_chain("raw", "synproxy_chain", ipv6=False, silent=True)
-        iptc_helper3.add_chain("filter", "synproxy_chain", ipv6=False, silent=True)
+        iptc_helper3.add_chain("raw", "SYNPROXY_RULES", ipv6=False, silent=True)
+        iptc_helper3.add_chain("filter", "SYNPROXY_RULES", ipv6=False, silent=True)
 
         # Flush chains
         iptc_helper3.flush_chain("raw", "PREROUTING", ipv6=False, silent=False)
         iptc_helper3.flush_chain("filter", "FORWARD", ipv6=False, silent=False)
-        iptc_helper3.flush_chain("raw", "synproxy_chain", ipv6=False, silent=False)
-        iptc_helper3.flush_chain("filter", "synproxy_chain", ipv6=False, silent=False)
+        iptc_helper3.flush_chain("raw", "SYNPROXY_RULES", ipv6=False, silent=False)
+        iptc_helper3.flush_chain("filter", "SYNPROXY_RULES", ipv6=False, silent=False)
 
         # Populate chains with basic rules
         ## raw.PREROUTING
@@ -345,46 +345,46 @@ class SYNProxyDataplane:
         rule_d = {
             "in-interface": "mitm0",
             "protocol": "tcp",
-            "target": "synproxy_chain",
+            "target": "SYNPROXY_RULES",
         }
         iptc_helper3.add_rule("raw", "PREROUTING", rule_d, position=0, ipv6=False)
         rule_d = {
             "in-interface": "mitm1",
             "protocol": "tcp",
-            "target": "synproxy_chain",
+            "target": "SYNPROXY_RULES",
         }
         iptc_helper3.add_rule("raw", "PREROUTING", rule_d, position=0, ipv6=False)
-        ## raw.synproxy_chain
+        ## raw.SYNPROXY_RULES
         rule_d = {
             "in-interface": "mitm0",
             "protocol": "tcp",
             "tcp": {"tcp-flags": ["FIN,SYN,RST,ACK", "SYN"]},
             "target": {"CT": {"notrack": ""}},
         }
-        iptc_helper3.add_rule("raw", "synproxy_chain", rule_d, position=0, ipv6=False)
+        iptc_helper3.add_rule("raw", "SYNPROXY_RULES", rule_d, position=0, ipv6=False)
         rule_d = {"target": "ACCEPT"}
-        iptc_helper3.add_rule("raw", "synproxy_chain", rule_d, position=0, ipv6=False)
+        iptc_helper3.add_rule("raw", "SYNPROXY_RULES", rule_d, position=0, ipv6=False)
         ## filter.FORWARD
         rule_d = {
             "in-interface": "mitm0",
             "protocol": "tcp",
-            "target": "synproxy_chain",
+            "target": "SYNPROXY_RULES",
         }
         iptc_helper3.add_rule("filter", "FORWARD", rule_d, position=0, ipv6=False)
         rule_d = {
             "in-interface": "mitm1",
             "protocol": "tcp",
-            "target": "synproxy_chain",
+            "target": "SYNPROXY_RULES",
         }
         iptc_helper3.add_rule("filter", "FORWARD", rule_d, position=0, ipv6=False)
-        ## filter.synproxy_chain
+        ## filter.SYNPROXY_RULES
         rule_d = {
             "protocol": "tcp",
             "conntrack": {"ctstate": ["INVALID"]},
             "target": "DROP",
         }
         iptc_helper3.add_rule(
-            "filter", "synproxy_chain", rule_d, position=0, ipv6=False
+            "filter", "SYNPROXY_RULES", rule_d, position=0, ipv6=False
         )
 
     def process_message(self, data, addr):
@@ -498,7 +498,7 @@ class SYNProxyDataplane:
                 self._logger.info("Flush connection: {}".format(connection))
                 self.connectiontable.remove(connection, callback=False)
 
-            batch_rules = [("synproxy_chain", _c.ipt_rule) for _c in _connections]
+            batch_rules = [("SYNPROXY_RULES", _c.ipt_rule) for _c in _connections]
             iptc_helper3.batch_begin(table="filter", ipv6=False)
             iptc_helper3.batch_delete_rules(
                 "filter", batch_rules, ipv6=False, silent=True
@@ -511,7 +511,7 @@ class SYNProxyDataplane:
                 self.connectiontable.remove(connection, callback=False)
                 iptc_helper3.delete_rule(
                     "filter",
-                    "synproxy_chain",
+                    "SYNPROXY_RULES",
                     connection.ipt_rule,
                     ipv6=False,
                     silent=True,
@@ -558,7 +558,7 @@ class SYNProxyDataplane:
         # Insert rule at precise position
         self._logger.info("Add connection: {}".format(connection))
         iptc_helper3.add_rule(
-            "filter", "synproxy_chain", ipt_rule, position=pos, ipv6=False
+            "filter", "SYNPROXY_RULES", ipt_rule, position=pos, ipv6=False
         )
         return True
 
@@ -608,7 +608,7 @@ class SYNProxyDataplane:
             connection.ipt_rule = new_ipt_rule
             # Replace rule
             iptc_helper3.replace_rule(
-                "filter", "synproxy_chain", old_ipt_rule, new_ipt_rule, ipv6=False
+                "filter", "SYNPROXY_RULES", old_ipt_rule, new_ipt_rule, ipv6=False
             )
         else:
             # Create iptables rule and connection object
@@ -622,7 +622,7 @@ class SYNProxyDataplane:
             # Insert rule at precise position
             self._logger.info("Add connection: {}".format(connection))
             iptc_helper3.add_rule(
-                "filter", "synproxy_chain", ipt_rule, position=pos, ipv6=False
+                "filter", "SYNPROXY_RULES", ipt_rule, position=pos, ipv6=False
             )
 
         return True
@@ -640,7 +640,7 @@ class SYNProxyDataplane:
         self._logger.info("Delete connection: {}".format(connection))
         self.connectiontable.remove(connection, callback=False)
         iptc_helper3.delete_rule(
-            "filter", "synproxy_chain", connection.ipt_rule, ipv6=False, silent=True
+            "filter", "SYNPROXY_RULES", connection.ipt_rule, ipv6=False, silent=True
         )
         return True
 

@@ -2,9 +2,9 @@ server {
     # Listen on ports 80 and 443
     listen 80;
     listen 443 ssl;
-    # Listen on secondary ports 8080 and 8443
-    listen 8080;
-    listen 8443 ssl;
+    ## Listen on secondary ports 8080 and 8443
+    #listen 8080;
+    #listen 8443 ssl;
 
     # Set the server name matching the SSL certificate
     server_name  *.gwa.demo;
@@ -31,6 +31,6 @@ server {
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+        fastcgi_pass unix:run/php/php7.2-fpm.sock;
     }
 }

@@ -4,15 +4,9 @@ Description=Linux kernel implementation of TCP synproxy with iptables
 
 [Service]
 Type=oneshot
-# Configure iptables for SYNPROXY - Protect wanX interfaces from incoming TCP SYNs from wan0
-ExecStart=/sbin/sysctl -w net.ipv4.tcp_syncookies=1
-ExecStart=/sbin/sysctl -w net.ipv4.tcp_timestamps=1
-ExecStart=/sbin/sysctl -w net.netfilter.nf_conntrack_tcp_loose=0
-ExecStart=/sbin/iptables -t raw    -F
-ExecStart=/sbin/iptables -t raw    -A PREROUTING -i wan0 -p tcp -m tcp --syn -j CT --notrack
-ExecStart=/sbin/iptables -t filter -F
-ExecStart=/sbin/iptables -t filter -A FORWARD -i wan0 -o wan+ -p tcp -m tcp -m conntrack --ctstate INVALID,UNTRACKED -j SYNPROXY --sack-perm --timestamp --wscale 7 --mss 1460
-ExecStart=/sbin/iptables -t filter -A FORWARD -p tcp -m conntrack --ctstate INVALID -j DROP
+ExecStart=/sbin/synproxy-iptables.sh
+ExecStopPost=/sbin/flushIptables
+RemainAfterExit=true
 
 [Install]
 WantedBy=multi-user.target

@@ -23,7 +23,7 @@ Vagrant.configure(2) do |config|
             apt install -y apt-transport-https && apt update
             apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
             apt install -y iptables ipset python3-yaml openvswitch-switch openvswitch-vtep
-            apt install -y dnsutils curl htop ethtool isc-dhcp-server dnsmasq nginx tmux tree psmisc tmux tcpdump
+            apt install -y dnsutils curl htop ethtool isc-dhcp-server dnsmasq nginx tmux tree psmisc tmux tcpdump iperf
         SHELL
 
         # Install Python dependencies
