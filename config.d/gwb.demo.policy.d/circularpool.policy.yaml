@@ -1,6 +1,7 @@
 CIRCULARPOOL:
     max: 1000
     DNS_GROUP_POLICY: []
+#        - {'initial_reputation': 0.0, 'sla': false, 'nodes': ['1.0.0.0']}
     CONTROL_VARIABLES:
         SYSTEM_LOAD:
             - {'threshold_min':  0, 'threshold_max': 100, 'fqdn_new': 0.0, 'sfqdn_new': 0.0, 'sfqdn_reuse': 0.0, 'math': 'max'}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Create multiple TCP/UDP echo endpoints
+
+[Service]
+ExecStartPre=/bin/bash -c "for ip in 192.168.10.{101..250}; do ip address add $ip/24 dev lan0; done"
+ExecStopPost=/bin/bash -c "for ip in 192.168.10.{101..250}; do ip address del $ip/24 dev lan0; done"
+ExecStart=/bin/bash -c "/usr/local/bin/echoserver.py                           \
+                            --tcp $(echo 192.168.10.{101..250}:{10000..10009}) \
+                            --udp $(echo 192.168.10.{101..250}:{10000..10009})"
+
+[Install]
+WantedBy=multi-user.target

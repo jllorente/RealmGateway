@@ -33,20 +33,4 @@ usage: rgw.py [-h] --name NAME --dns-soa [DNS_SOA [DNS_SOA ...]]
               [--repository-policy-folder FOLDERNAME] [--synproxy IPADDR PORT]
 rgw.py: error: the following arguments are required: --dns-cname-soa
 
-
-NETNS mode
-from test_gwa in netns this breaks
-dig -x 192.168.0.100
-
-future: <Task finished coro=<DNSCallbacks.dns_process_rgw_lan_soa() done, defined at /realmgateway/src/callbacks.py:287> excep
-tion=TypeError("'NoneType' object is not subscriptable")>
-Traceback (most recent call last):
-  File "/realmgateway/src/callbacks.py", line 324, in dns_process_rgw_lan_soa
-    if service_data['carriergrade'] is True:
-TypeError: 'NoneType' object is not subscriptable
-
-
-Using a different CNAME SOA returns the private IP ?
-
-;; ANSWER SECTION:
-7l5i4lp28m87c9jadw3e6ugxavzg7ewt.secured-gwa.demo. 30 IN A 192.168.0.100
+When CIRCULARPOOL.DNS_GROUP_POLICY is empty [], the normalization fails! pbra.py:991, recode to take a single value!

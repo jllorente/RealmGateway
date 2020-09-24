@@ -13,10 +13,20 @@ Vagrant.configure(2) do |config|
     config.vm.box = "emptybox/ubuntu-bionic-amd64-lxc"
 end
 
+# Common
 load File.expand_path("router/Vagrantfile") if File.exists?("router/Vagrantfile")
 load File.expand_path("public/Vagrantfile") if File.exists?("public/Vagrantfile")
+
+# Gateway-A branch
 load File.expand_path("proxygwa/Vagrantfile") if File.exists?("proxygwa/Vagrantfile")
 load File.expand_path("gwa/Vagrantfile") if File.exists?("gwa/Vagrantfile")
 load File.expand_path("testgwa/Vagrantfile") if File.exists?("testgwa/Vagrantfile")
 load File.expand_path("nestgwa/Vagrantfile") if File.exists?("nestgwa/Vagrantfile")
 load File.expand_path("testnestgwa/Vagrantfile") if File.exists?("testnestgwa/Vagrantfile")
+
+# Gateway-B branch
+load File.expand_path("proxygwb/Vagrantfile") if File.exists?("proxygwb/Vagrantfile")
+load File.expand_path("gwb/Vagrantfile") if File.exists?("gwb/Vagrantfile")
+load File.expand_path("testgwb/Vagrantfile") if File.exists?("testgwb/Vagrantfile")
+load File.expand_path("nestgwb/Vagrantfile") if File.exists?("nestgwb/Vagrantfile")
+load File.expand_path("testnestgwb/Vagrantfile") if File.exists?("testnestgwb/Vagrantfile")

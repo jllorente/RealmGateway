@@ -75,10 +75,10 @@ cat <<EOF >> /etc/hosts
 10.0.0.13       public
 10.0.0.14       proxygwa
 10.0.0.15       proxygwb
-10.0.0.16       test_gwa
-10.0.0.17       test_gwb
-10.0.0.21       nest_gwa
-10.0.0.22       nest_gwb
-10.0.0.26       test_ngwa
-10.0.0.27       test_ngwb
+10.0.0.16       testgwa
+10.0.0.17       testgwb
+10.0.0.21       nestgwa
+10.0.0.22       nestgwb
+10.0.0.26       testnestgwa
+10.0.0.27       testnestgwb
 EOF
