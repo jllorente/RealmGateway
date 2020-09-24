@@ -11,7 +11,7 @@ Vagrant.configure(2) do |config|
         node.vm.synced_folder ".", "/vagrant", disabled: true
         # Use one-off file provisioner maintaining file permission
         node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
-        node.vm.provision "file", source: "./gwa/rootfs",    destination: "/var/tmp/rootfs"
+        node.vm.provision "file", source: "./gwa/rootfs", destination: "/var/tmp/rootfs"
         # This shared mount does not preserve permissions but it remains _up-to-date_ for running code
         node.vm.synced_folder "/realmgateway", "/realmgateway"
 
@@ -37,7 +37,6 @@ Vagrant.configure(2) do |config|
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
             systemctl daemon-reload
-            systemctl enable runatstartup
             systemctl start runatstartup
         SHELL
 
@@ -50,11 +49,9 @@ Vagrant.configure(2) do |config|
             systemctl restart dnsmasq
             systemctl restart isc-dhcp-server
             systemctl restart nginx
-            # Enable & start realmgateway service(s)
-            systemctl enable sdn-controller
-            systemctl enable realmgateway
-            systemctl start  sdn-controller
-            systemctl start  realmgateway
+            # Start realmgateway service(s)
+            systemctl start sdn-controller
+            systemctl start realmgateway
         SHELL
 
         # Configure container networking

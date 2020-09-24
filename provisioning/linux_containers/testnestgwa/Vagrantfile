@@ -1,0 +1,69 @@
+## author:      jesus.llorente@gmail.com
+## date:        10/09/2020
+## description: Development VM for Realm Gateway & Customer Edge Switching
+
+Vagrant.configure(2) do |config|
+    ## testnestgwa.demo
+    config.vm.define "testnestgwa" do |node|
+        node.vm.hostname = "testnestgwa"
+
+        # Configure shared folders
+        node.vm.synced_folder ".", "/vagrant", disabled: true
+        # Use one-off file provisioner maintaining file permission
+        node.vm.provision "file", source: "./common/rootfs",  destination: "/var/tmp/rootfs"
+        node.vm.provision "file", source: "./testnestgwa/rootfs", destination: "/var/tmp/rootfs"
+
+        # Install apt package dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            export DEBIAN_FRONTEND=noninteractive
+            unlink /etc/resolv.conf || true
+            echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+            apt install -y apt-transport-https && apt update
+            apt install -y arping curl dnsutils ethtool tcpdump lksctp-tools
+            apt install -y ftp vsftpd iperf nginx
+        SHELL
+
+        # Configure common services
+        node.vm.provision "shell", inline: <<-SHELL
+            systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
+            cp -R /var/tmp/rootfs/* /
+            systemctl daemon-reload
+            systemctl start runatstartup
+        SHELL
+
+        # Configure specific services
+        node.vm.provision "shell", inline: <<-SHELL
+            echo 'nameserver 192.168.10.1' > /etc/resolv.conf
+            ip route change default via 192.168.10.1
+            systemctl restart vsftpd
+            systemctl restart nginx
+            systemctl start echo-server
+        SHELL
+
+        # Configure container networking
+        node.vm.provider :lxc do |lxc|
+            lxc.container_name = :machine
+
+            # Clear network configuration
+            lxc.customize "net", ""
+
+            # Management interface
+            lxc.customize "net.0.type",         "veth"
+            lxc.customize "net.0.flags",        "up"
+            lxc.customize "net.0.link",         "br-mgt0"
+            lxc.customize "net.0.name",         "mgt0"
+            lxc.customize "net.0.veth.pair",    "testngwa-mgt0"
+            lxc.customize "net.0.ipv4.address", "10.0.0.26/24"
+            lxc.customize "net.0.ipv4.gateway", "10.0.0.1"
+
+            # LAN interface
+            lxc.customize "net.1.type",         "veth"
+            lxc.customize "net.1.flags",        "up"
+            lxc.customize "net.1.link",         "br-lan0-ngwa"
+            lxc.customize "net.1.name",         "lan0"
+            lxc.customize "net.1.veth.pair",    "testngwa-lan0"
+            lxc.customize "net.1.ipv4.address", "192.168.10.100/24"
+            #lxc.customize "net.1.ipv4.gateway", "192.168.10.1"
+        end
+    end
+end

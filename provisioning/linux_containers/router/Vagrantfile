@@ -28,7 +28,6 @@ Vagrant.configure(2) do |config|
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
             systemctl daemon-reload
-            systemctl enable runatstartup
             systemctl start runatstartup
         SHELL
 
@@ -38,7 +37,6 @@ Vagrant.configure(2) do |config|
             ip route change default via 100.64.0.254
             systemctl restart bind9
             systemctl restart dnsmasq
-            systemctl enable synproxy-iptables
             systemctl start  synproxy-iptables
         SHELL
 

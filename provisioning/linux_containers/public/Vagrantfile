@@ -28,7 +28,6 @@ Vagrant.configure(2) do |config|
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
             systemctl daemon-reload
-            systemctl enable runatstartup
             systemctl start runatstartup
         SHELL
 

@@ -7,7 +7,7 @@ ExecStartPre=/bin/systemctl stop synproxy-disable
 ExecStartPre=/bin/systemctl stop synproxy-iptables
 # Create Netmap file / See host's mounting point! "ls -lah /dev/netmap"
 ExecStartPre=/bin/bash -c "/bin/mknod /dev/netmap c 10 54 || true"
-ExecStartPre=/usr/bin/ovs-vsctl --if-exists del-br br-synproxy
+ExecStartPre=/usr/bin/ovs-vsctl --if-exists del-br ovs-synproxy
 ExecStartPre=/sbin/disableOffload wan0
 ExecStartPre=/sbin/disableOffload wan0p
 ExecStart=/home/vagrant/nmsynproxy/nmsynproxy netmap:wan0 netmap:wan0p

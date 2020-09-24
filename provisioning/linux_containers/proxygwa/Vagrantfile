@@ -34,7 +34,6 @@ Vagrant.configure(2) do |config|
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
             systemctl daemon-reload
-            systemctl enable runatstartup
             systemctl start runatstartup
         SHELL
 
@@ -44,8 +43,7 @@ Vagrant.configure(2) do |config|
             git clone https://github.com/jllorente/helpers_n_wrappers /usr/lib/python3/dist-packages/helpers_n_wrappers || true
             # Remove default gateway due to custom routing
             ip route delete default
-            # Default operation mode - pseudowire
-            systemctl enable synproxy-disable
+            # Default operation mode - pseudowire without proxy
             systemctl start  synproxy-disable
         SHELL
 
