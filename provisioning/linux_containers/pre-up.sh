@@ -39,7 +39,7 @@ fi
 
 
 echo "Enabling necesary kernel modules for CES/RealGateway"
-for MODULE in sctp nf_conntrack_proto_sctp xt_sctp xt_MARKDNAT netmap openvswitch
+for MODULE in sctp nf_conntrack_proto_sctp xt_sctp xt_MARKDNAT openvswitch
 do
 	echo "> modprobe $MODULE"
 	modprobe $MODULE

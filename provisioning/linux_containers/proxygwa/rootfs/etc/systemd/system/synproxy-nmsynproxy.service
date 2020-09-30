@@ -1,0 +1,11 @@
+[Unit]
+Description=Juha-Matti's implementation of inline TCP synproxy
+After=openvswitch-switch.service
+
+[Service]
+ExecStartPre=/bin/systemctl stop synproxy-disable
+ExecStartPre=/bin/systemctl stop synproxy-iptables
+ExecStart=/sbin/ldpsynproxy wan0p wan0
+
+[Install]
+WantedBy=multi-user.target

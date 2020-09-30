@@ -14,9 +14,9 @@ The following instructions have been tested with Ubuntu 18 Bionic, Linux kernel 
 Compile and install the module as follow:
 
 ```
-$ cd /realmgateway/iptables_devel/kernel
+cd /realmgateway/iptables_devel/kernel
 
-$ make all
+make all
 make -C /lib/modules/4.15.0-117-generic/build M=/realmgateway/iptables_devel/kernel modules
 make[1]: Entering directory '/usr/src/linux-headers-4.15.0-117-generic'
   CC [M]  /realmgateway/iptables_devel/kernel/xt_MARKDNAT.o
@@ -26,7 +26,7 @@ make[1]: Entering directory '/usr/src/linux-headers-4.15.0-117-generic'
   LD [M]  /realmgateway/iptables_devel/kernel/xt_MARKDNAT.ko
 make[1]: Leaving directory '/usr/src/linux-headers-4.15.0-117-generic'
 
-$ sudo make install
+sudo make install
 cp xt_MARKDNAT.ko /lib/modules/4.15.0-117-generic/kernel/net/netfilter
 depmod
 ```
@@ -34,7 +34,7 @@ depmod
 Verify the module can be loaded:
 
 ```
-$ modinfo xt_MARKDNAT
+modinfo xt_MARKDNAT
 filename:       /lib/modules/4.15.0-117-generic/kernel/net/netfilter/xt_MARKDNAT.ko
 alias:          ipt_MARKDNAT
 alias:          xt_MARKDNAT
@@ -53,37 +53,37 @@ vermagic:       4.15.0-117-generic SMP mod_unload
 Install the following build dependencies as follow:
 
 ```
-$ sudo apt update
-$ sudo apt install iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
+sudo apt update
+sudo apt install iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
 ```
 
 Ensure the APT source lists include the correspondent `deb-src` repository to download the source package for `iptables`:
 
 ```
-$ apt show iptables | grep "APT-Sources"
+apt show iptables | grep "APT-Sources"
 APT-Sources: http://archive.ubuntu.com/ubuntu bionic/main amd64 Packages
 
-$ cat /etc/apt/sources.list | grep deb-src
+cat /etc/apt/sources.list | grep deb-src
 deb-src http://archive.ubuntu.com/ubuntu bionic main restricted
 ```
 
 Install the custom iptables userspace module as follow:
 
 ```
-$ sudo apt update
-$ cd /var/tmp/ && apt source iptables
-$ cd /var/tmp/iptables-1.6.1
-$ ./autogen.sh
-$ ./configure
-$ cp /realmgateway/iptables_devel/userspace/libxt_MARKDNAT.* /var/tmp/iptables-1.6.1/extensions
-$ make all -C /var/tmp/iptables-1.6.1/extensions
-$ sudo cp /var/tmp/iptables-1.6.1/extensions/libxt_MARKDNAT.so /usr/lib/x86_64-linux-gnu/xtables/libxt_MARKDNAT.so
+sudo apt update
+cd /var/tmp/ && apt source iptables
+cd /var/tmp/iptables-1.6.1
+./autogen.sh
+./configure
+cp /realmgateway/iptables_devel/userspace/libxt_MARKDNAT.* /var/tmp/iptables-1.6.1/extensions
+make all -C /var/tmp/iptables-1.6.1/extensions
+sudo cp /var/tmp/iptables-1.6.1/extensions/libxt_MARKDNAT.so /usr/lib/x86_64-linux-gnu/xtables/libxt_MARKDNAT.so
 ```
 
 Verify the module can be loaded:
 
 ```
-$ iptables -j MARKDNAT --help
+iptables -j MARKDNAT --help
 MARKDNAT target options:
   --set-xmark value[/mask]  Clear bits in mask and XOR value into nfmark
   --set-mark value[/mask]   Clear bits in mask and OR value into nfmark
@@ -97,6 +97,6 @@ MARKDNAT target options:
 Verify both the userspace and kernel modules have been correctly installed:
 
 ```
-$ sudo iptables -t nat -A PREROUTING -j MARKDNAT --set-xmark 0x0/0x0
-$ sudo iptables -t nat -D PREROUTING -j MARKDNAT --set-xmark 0x0/0x0
+sudo iptables -t nat -A PREROUTING -j MARKDNAT --set-xmark 0x0/0x0
+sudo iptables -t nat -D PREROUTING -j MARKDNAT --set-xmark 0x0/0x0
 ```

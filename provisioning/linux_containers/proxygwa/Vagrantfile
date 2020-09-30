@@ -33,6 +33,7 @@ Vagrant.configure(2) do |config|
         node.vm.provision "shell", inline: <<-SHELL
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
+            chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
             systemctl start runatstartup
         SHELL
@@ -43,17 +44,17 @@ Vagrant.configure(2) do |config|
             git clone https://github.com/jllorente/helpers_n_wrappers /usr/lib/python3/dist-packages/helpers_n_wrappers || true
             # Remove default gateway due to custom routing
             ip route delete default
+            # Set exec bit on custom synproxy implementation(s)
+            chmod +x /sbin/*synproxy
+            disableOffload wan0
+            disableOffload wan0p
             # Default operation mode - pseudowire without proxy
-            systemctl start  synproxy-disable
+            systemctl start synproxy-disable
         SHELL
 
         # Configure container networking
         node.vm.provider :lxc do |lxc|
             lxc.container_name = :machine
-
-            # Added for testing Netmap / Modify as "ls -lah /dev/netmap"
-            lxc.customize "cgroup.devices.allow", "c 10:54 rwm"
-            lxc.customize "apparmor.profile",     "unconfined"
 
             # Clear network configuration
             lxc.customize "net", ""

@@ -27,6 +27,7 @@ Vagrant.configure(2) do |config|
         node.vm.provision "shell", inline: <<-SHELL
             systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
             cp -R /var/tmp/rootfs/* /
+            chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
             systemctl start runatstartup
         SHELL
@@ -35,9 +36,11 @@ Vagrant.configure(2) do |config|
         node.vm.provision "shell", inline: <<-SHELL
             echo 'nameserver 127.0.0.1' > /etc/resolv.conf
             ip route change default via 100.64.0.254
+            # Add _public_ test network(s) via public node
+            ip route add 100.64.248.0/21 via 100.64.0.100 dev wan0
             systemctl restart bind9
             systemctl restart dnsmasq
-            systemctl start  synproxy-iptables
+            systemctl start synproxy-iptables
         SHELL
 
         # Configure container networking

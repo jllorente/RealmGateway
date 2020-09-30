@@ -1,10 +1,10 @@
 [Unit]
-Description=Stop any running TCP Synproxy instance (iptables or netmap)
+Description=Stop any running TCP Synproxy instance
 
 [Service]
 Type=oneshot
 ExecStartPre=/bin/systemctl stop synproxy-iptables
-ExecStartPre=/bin/systemctl stop synproxy-netmap
+ExecStartPre=/bin/systemctl stop synproxy-nmsynproxy
 ExecStart=/sbin/synproxy-disable.sh
 RemainAfterExit=true
 
