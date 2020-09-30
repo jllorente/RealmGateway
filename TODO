@@ -17,5 +17,4 @@ TODO:
  - replace SSL cert with *.demo ?
     -> Only useful if we plan to add a 3rd GW branch ? Then reconfigure all nginx sites accordingly...
  - disable offload on veth_pair for proxygwX (can we use macvlan) ?
- - move profile.d and subscriber.d into own FQDN folder
 

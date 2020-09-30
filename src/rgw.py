@@ -34,39 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # TODO: Add logic to register several DNS resolvers and round robin or avoid using unreachable one
 # TODO: Define better transition from CUSTOMER_POLICY towards ADMIN_POLICY in filter.FORWARD - Use ipt-host-unknown ?
-"""
-Run as:
-./rgw.py  --name             gwa.demo                                        \
-          --dns-soa          gwa.demo. cname-gwa.demo.                       \
-                             0.168.192.in-addr.arpa. 1.64.100.in-addr.arpa.  \
-          --dns-cname-soa    cname-gwa.demo.                                 \
-          --dns-server-local 127.0.0.1 53                                    \
-          --dns-server-lan   192.168.0.1 53                                  \
-          --dns-server-wan   100.64.1.130 53                                 \
-          --dns-resolver     127.0.0.1 54                                    \
-          --ddns-server      127.0.0.2 53                                    \
-          --dns-timeout      0.25 0.25 0.25                                  \
-          --pool-serviceip   100.64.1.130/32                                 \
-          --pool-cpoolip     100.64.1.131/32 100.64.1.132/32 100.64.1.133/32 \
-          --ipt-cpool-queue  1                                               \
-          --ipt-cpool-chain  CIRCULAR_POOL                                   \
-          --ipt-host-chain   CUSTOMER_POLICY                                 \
-          --ipt-host-unknown CUSTOMER_POLICY_ACCEPT                          \
-          --ipt-policy-order PACKET_MARKING NAT mREJECT ADMIN_PREEMPTIVE     \
-                             GROUP_POLICY CUSTOMER_POLICY                    \
-                             ADMIN_POLICY ADMIN_POLICY_DHCP                  \
-                             ADMIN_POLICY_HTTP ADMIN_POLICY_DNS              \
-                             GUEST_SERVICES                                  \
-          --ips-hosts        IPS_SUBSCRIBERS                                 \
-          --ipt-markdnat                                                     \
-          --ipt-flush                                                        \
-          --repository-subscriber-folder /realmgateway/config.d/gwa.demo.subscriber.d/ \
-          --repository-policy-folder     /realmgateway/config.d/gwa.demo.policy.d/     \
-          --repository-api-url  http://127.0.0.1:8082/                       \
-          --network-api-url     http://127.0.0.1:8081/                       \
-          --synproxy         10.0.0.14 12345
 
-"""
 
 import argparse
 import asyncio

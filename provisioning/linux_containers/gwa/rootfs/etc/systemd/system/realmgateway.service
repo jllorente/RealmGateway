@@ -27,8 +27,8 @@ ExecStart=/realmgateway/src/rgw.py                                             \
             --ips-hosts        IPS_SUBSCRIBERS                                 \
             --ipt-markdnat                                                     \
             --ipt-flush                                                        \
-            --repository-subscriber-folder /realmgateway/config.d/gwa.demo.subscriber.d/ \
-            --repository-policy-folder     /realmgateway/config.d/gwa.demo.policy.d/     \
+            --repository-subscriber-folder /realmgateway/config.d/gwa.demo/subscriber.d/ \
+            --repository-policy-folder     /realmgateway/config.d/gwa.demo/policy.d/     \
             --repository-api-url  http://127.0.0.1:8082/                       \
             --network-api-url     http://127.0.0.1:8081/                       \
             --synproxy         10.0.0.14 12345
