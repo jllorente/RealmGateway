@@ -2,4 +2,3 @@ TODO:
 
 Improve documentation and readme in orchestration
 Add network diagrams and tmux scripts to start up
-When CIRCULARPOOL.DNS_GROUP_POLICY is empty [], the normalization fails! pbra.py:991, recode to take a single value!

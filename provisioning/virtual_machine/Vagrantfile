@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
         node.vm.box = "ubuntu/bionic64"
         node.vm.hostname = "rgw-dev"
         # requires: vagrant plugin install vagrant-disksize
-        node.disksize.size = '50GB'
+        node.disksize.size = '25GB'
 
         # Configure VM specs
         node.vm.provider "virtualbox" do |vbox|

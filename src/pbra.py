@@ -926,7 +926,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         allocated_ipv4 = yield from self._unified_policy_circularpool(query, addr, host_obj, service_data, host_ipv4)
         return allocated_ipv4
 
-    def _normalize_reputation_values(self, a, b):
+    def _normalize_reputation_value(self, value):
         """
         Return normalized values based on current reputation values.
 
@@ -936,17 +936,18 @@ class PolicyBasedResourceAllocation(container3.Container):
 
         We opt to normalize the reputation in a new interval [0, max_reputation] to unlock resource access to the best reputed nodes.
         """
-        # Get list of nodes
-        nodes = self.lookup(KEY_DNS_REPUTATION, update=False, check_expire=False)
+        try:
+            # Get list of nodes
+            nodes = self.lookup(KEY_DNS_REPUTATION, update=False, check_expire=False)
 
-        # Obtain the highest reputation of the existing nodes
-        max_reputation = max(nodes, key=lambda node: node.reputation).reputation
+            # Obtain the highest reputation of the existing nodes
+            max_reputation = max(nodes, key=lambda node: node.reputation).reputation
 
-        ## Scale normalized [0,1] value to new range [x, y]
-        normalized_f = lambda value, x, y: (value * (y - x)) + x
-        a_norm = normalized_f(a, 0, max_reputation)
-        b_norm = normalized_f(b, 0, max_reputation)
-        return (a_norm, b_norm)
+            ## Scale normalized [0,1] value to new range [x, y]
+            normalized_f = lambda value, x, y: (value * (y - x)) + x
+            return normalized_f(value, 0, max_reputation)
+        except:
+            return 0
 
     def _compute_policy_math_reputation(self, r_resolver, r_requestor, math):
         # Validate choice for math operation
@@ -988,7 +989,8 @@ class PolicyBasedResourceAllocation(container3.Container):
         dns_resolver_ipaddr = addr[0]
 
         # Normalize reputation values
-        r_resolver, r_requestor = self._normalize_reputation_values(r_resolver, r_requestor)
+        r_resolver = self._normalize_reputation_value(r_resolver)
+        r_requestor = self._normalize_reputation_value(r_requestor)
 
         # Define allocation service for easy logging
         if fqdn:

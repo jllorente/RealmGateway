@@ -31,6 +31,16 @@ vagrant up  rgw-dev
 vagrant ssh rgw-dev
 ```
 
+Use the following commands to maintain an updated copy of the modified repository files inside the VM:
+
+```
+# Access the location of the Vagrantfile
+cd provisioning/virtual_machine
+
+# Synchronize folders
+vagrant rsync-auto rgw-dev
+```
+
 
 ### Spawning the Linux Containers - LXC
 
