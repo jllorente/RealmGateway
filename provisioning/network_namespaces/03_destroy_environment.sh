@@ -41,6 +41,12 @@ fi
 set -x
 
 ###############################################################################
+# Destroy tmux session
+###############################################################################
+
+tmux kill-session -t rgw_netns
+
+###############################################################################
 # Remove supporting infrastructure for single instance of Realm Gateway
 ###############################################################################
 
@@ -64,10 +70,13 @@ ip link del dev ns-lan0-gwa
 ln -s /proc/1/ns/net /var/run/netns/default > /dev/null 2> /dev/null
 
 #Remove namespaces
-for i in test_gwa gwa router public; do
+for i in testgwa gwa router public; do
     ip netns del $i > /dev/null 2> /dev/null
 done
 
 # Kill dnsmasq running in router netns and cleanup pid file
 pkill -F /var/run/router.dnsmasq.pid &> /dev/null || true
 rm       /var/run/router.dnsmasq.pid &> /dev/null || true
+
+# Destroy OpenvSwitch instance created by RealmGateway
+ovs-vsctl --if-exists del-br ovs-ces

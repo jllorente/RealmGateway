@@ -58,11 +58,10 @@ tmux send-keys 'nsbash gwa' Enter
 tmux select-pane -t 1
 tmux send-keys 'nsbash public' Enter
 tmux select-pane -t 2
-tmux send-keys 'nsbash test_gwa' Enter
+tmux send-keys 'nsbash testgwa' Enter
 
 tmux select-pane -t 0
-tmux send-keys 'cd /realmgateway' Enter
-tmux send-keys './run_gwa_netns.sh' Enter
+tmux send-keys '/realmgateway/config.d/gwa.demo/run.sh' Enter
 
 echo "Initializing RealmGateway gwa.demo "
 sleep 10

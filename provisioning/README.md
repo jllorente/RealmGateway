@@ -25,10 +25,10 @@ Use the following commands:
 cd provisioning/virtual_machine
 
 # Create the VM
-vagrant up  realm-gateway
+vagrant up  rgw-dev
 
 # SSH into the VM
-vagrant ssh realm-gateway
+vagrant ssh rgw-dev
 ```
 
 

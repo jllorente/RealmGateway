@@ -17,4 +17,5 @@ TODO:
  - replace SSL cert with *.demo ?
     -> Only useful if we plan to add a 3rd GW branch ? Then reconfigure all nginx sites accordingly...
  - disable offload on veth_pair for proxygwX (can we use macvlan) ?
-
+ - change _policies_ to reflect new 100.64.248.0/21 test networks!
+ - Add tmux for lxc environment

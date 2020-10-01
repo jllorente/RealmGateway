@@ -73,7 +73,7 @@ ip link set dev ns-lan0-gwa up
 #Create the default namespace
 ln -s /proc/1/ns/net /var/run/netns/default > /dev/null 2> /dev/null
 
-for i in test_gwa gwa router public; do
+for i in testgwa gwa router public; do
     #Remove and create new namespaces
     ip netns del $i > /dev/null 2> /dev/null
     ip netns add $i
@@ -153,25 +153,25 @@ ip netns exec gwa ip link set dev wan0 up
 ip netns exec gwa ip address add 192.168.0.1/24  dev lan0
 ip netns exec gwa ip address add 100.64.1.130/24 dev wan0
 ip netns exec gwa ip route add default via 100.64.1.1 dev wan0
-ip netns exec gwa bash -c 'echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+ip netns exec gwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
 
 # Add Circular Pool address for ARP responses
 ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip/32 dev wan0; done"
 
 
 ###############################################################################
-# Create test_gwa configuration
+# Create testgwa configuration
 ###############################################################################
 
 ip link add link ns-lan0-gwa dev lan0 txqueuelen 25000 type macvlan mode bridge
-ip link set lan0 netns test_gwa
-ip netns exec test_gwa ip link set dev lan0 up
-ip netns exec test_gwa ip address add 192.168.0.100/24 dev lan0
-ip netns exec test_gwa ip route add default via 192.168.0.1 dev lan0
-ip netns exec test_gwa bash -c 'echo "nameserver 192.168.0.1" > /etc/resolv.conf'
-# Add _private_ test IP addresses to test_gwa node
-ip netns exec test_gwa bash -c "for ip in 192.168.0.{101..250}; do ip address add \$ip/32 dev lan0; done"
-ip netns exec test_gwa bash -c "/realmgateway/scripts/echo-server.py                \
+ip link set lan0 netns testgwa
+ip netns exec testgwa ip link set dev lan0 up
+ip netns exec testgwa ip address add 192.168.0.100/24 dev lan0
+ip netns exec testgwa ip route add default via 192.168.0.1 dev lan0
+ip netns exec testgwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 192.168.0.1" > /etc/resolv.conf'
+# Add _private_ test IP addresses to testgwa node
+ip netns exec testgwa bash -c "for ip in 192.168.0.{101..250}; do ip address add \$ip/32 dev lan0; done"
+ip netns exec testgwa bash -c "/realmgateway/scripts/echo-server.py                \
                                   --tcp $(echo 192.168.0.{101..250}:{10000..10009}) \
                                   --udp $(echo 192.168.0.{101..250}:{10000..10009})" &> /dev/null &
 
@@ -185,6 +185,6 @@ ip link set wan0 netns public
 ip netns exec public ip link set dev wan0 up
 ip netns exec public ip address add 100.64.0.100/24 dev wan0
 ip netns exec public ip route add default via 100.64.0.1 dev wan0
-ip netns exec public bash -c 'echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+ip netns exec public bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
 # Add _public_ test network(s) IP addresses to public node
 ip netns exec public bash -c "for ip in 100.64.{248..255}.{0..16}; do ip address add \$ip/32 dev wan0; done"
