@@ -88,7 +88,7 @@ for i in testgwa gwa router public; do
     #Create new /etc mount point
     mkdir -p  /etc/netns/$i
     echo $i > /etc/netns/$i/hostname
-    touch     /etc/netns/$i/resolv.conf
+    #touch     /etc/netns/$i/resolv.conf
 done
 
 ###############################################################################
@@ -153,7 +153,9 @@ ip netns exec gwa ip link set dev wan0 up
 ip netns exec gwa ip address add 192.168.0.1/24  dev lan0
 ip netns exec gwa ip address add 100.64.1.130/24 dev wan0
 ip netns exec gwa ip route add default via 100.64.1.1 dev wan0
-ip netns exec gwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+#ip netns exec gwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+echo "nameserver 100.64.0.1" > /etc/netns/gwa/resolv.conf
+
 
 # Add Circular Pool address for ARP responses
 ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip/32 dev wan0; done"
@@ -168,10 +170,11 @@ ip link set lan0 netns testgwa
 ip netns exec testgwa ip link set dev lan0 up
 ip netns exec testgwa ip address add 192.168.0.100/24 dev lan0
 ip netns exec testgwa ip route add default via 192.168.0.1 dev lan0
-ip netns exec testgwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 192.168.0.1" > /etc/resolv.conf'
+#ip netns exec testgwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 192.168.0.1" > /etc/resolv.conf'
+echo "nameserver 192.168.0.1" > /etc/netns/testgwa/resolv.conf
 # Add _private_ test IP addresses to testgwa node
 ip netns exec testgwa bash -c "for ip in 192.168.0.{101..250}; do ip address add \$ip/32 dev lan0; done"
-ip netns exec testgwa bash -c "/realmgateway/scripts/echo-server.py                \
+ip netns exec testgwa bash -c "/realmgateway/scripts/echoserver.py                \
                                   --tcp $(echo 192.168.0.{101..250}:{10000..10009}) \
                                   --udp $(echo 192.168.0.{101..250}:{10000..10009})" &> /dev/null &
 
@@ -185,6 +188,7 @@ ip link set wan0 netns public
 ip netns exec public ip link set dev wan0 up
 ip netns exec public ip address add 100.64.0.100/24 dev wan0
 ip netns exec public ip route add default via 100.64.0.1 dev wan0
-ip netns exec public bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+#ip netns exec public bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
+echo "nameserver 100.64.0.1" > /etc/netns/public/resolv.conf
 # Add _public_ test network(s) IP addresses to public node
 ip netns exec public bash -c "for ip in 100.64.{248..255}.{0..16}; do ip address add \$ip/32 dev wan0; done"
