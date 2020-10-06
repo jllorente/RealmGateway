@@ -16,7 +16,7 @@ IPADDR_GATEWAY="192.168.0.1"
 IPADDR_DNS="192.168.0.1"
 
 #Create the default namespace
-ln -s /proc/1/ns/net /var/run/netns/default > /dev/null 2> /dev/null
+ln -s /proc/1/ns/net /var/run/netns/default &> /dev/null
 
 echo "Creating network namespace from $NAME$FIRST to $NAME$LAST"
 
@@ -24,7 +24,7 @@ for i in `seq $FIRST $LAST`; do
     nsname="$NAME$i"
     echo "Creating network namespace $nsname @ $IPADDR_PREFIX$i$IPADDR_NETPREFIX"
     #Remove and create new namespaces
-    ip netns del $nsname > /dev/null 2> /dev/null
+    ip netns del $nsname &> /dev/null
     ip netns add $nsname
     #Create new /etc mount point
     mkdir -p        /etc/netns/$nsname
@@ -32,10 +32,10 @@ for i in `seq $FIRST $LAST`; do
     touch           /etc/netns/$nsname/resolv.conf
     echo "nameserver $IPADDR_DNS" > /etc/netns/$nsname/resolv.conf
     #Configure sysctl options
-    ip netns exec $nsname sysctl -w "net.ipv4.ip_forward=0"                 > /dev/null 2> /dev/null
-    ip netns exec $nsname sysctl -w "net.ipv6.conf.all.disable_ipv6=1"      > /dev/null 2> /dev/null
-    ip netns exec $nsname sysctl -w "net.ipv6.conf.default.disable_ipv6=1"  > /dev/null 2> /dev/null
-    ip netns exec $nsname sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"       > /dev/null 2> /dev/null
+    ip netns exec $nsname sysctl -w "net.ipv4.ip_forward=0"
+    ip netns exec $nsname sysctl -w "net.ipv6.conf.all.disable_ipv6=1"
+    ip netns exec $nsname sysctl -w "net.ipv6.conf.default.disable_ipv6=1"
+    ip netns exec $nsname sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"
     #Configure the loopback interface in namespace
     ip netns exec $nsname ip address add 127.0.0.1/8 dev lo
     ip netns exec $nsname ip link set dev lo up

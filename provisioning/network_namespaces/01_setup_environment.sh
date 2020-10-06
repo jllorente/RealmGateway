@@ -37,6 +37,25 @@ if [[ $UID != 0 ]]; then
     exit 1
 fi
 
+setup_basic_netns () {
+    echo "Creating basic configuration for netns $1"
+    # Delete & recreate network namespace
+    ip netns del $1 &> /dev/null
+    ip netns add $1
+    # Configure sysctl options
+    ip netns exec $1 sysctl -w "net.ipv4.ip_forward=1"
+    ip netns exec $1 sysctl -w "net.ipv6.conf.all.disable_ipv6=1"
+    ip netns exec $1 sysctl -w "net.ipv6.conf.default.disable_ipv6=1"
+    ip netns exec $1 sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"
+    # Configure the loopback interface in namespace
+    ip netns exec $1 ip address add 127.0.0.1/8 dev lo
+    ip netns exec $1 ip link set dev lo up
+    # Create /etc mount point
+    mkdir -p  /etc/netns/$1
+    echo $1 > /etc/netns/$1/hostname
+}
+
+
 # Print commands and their arguments as they are executed.
 set -x
 
@@ -45,14 +64,14 @@ set -x
 ###############################################################################
 
 echo "Enable IP forwarding"
-sysctl -w "net.ipv4.ip_forward=1"                 > /dev/null 2> /dev/null
+sysctl -w "net.ipv4.ip_forward=1"
 echo "Disable IPv6 for all interfaces"
-sysctl -w "net.ipv6.conf.all.disable_ipv6=1"      > /dev/null 2> /dev/null
-sysctl -w "net.ipv6.conf.default.disable_ipv6=1"  > /dev/null 2> /dev/null
-sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"       > /dev/null 2> /dev/null
+sysctl -w "net.ipv6.conf.all.disable_ipv6=1"
+sysctl -w "net.ipv6.conf.default.disable_ipv6=1"
+sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"
 echo "Unloading iptables bridge kernel modules"
-rmmod xt_physdev
-rmmod br_netfilter
+rmmod xt_physdev   &> /dev/null
+rmmod br_netfilter &> /dev/null
 
 # [COMMON]
 ## WAN side
@@ -60,6 +79,7 @@ ip link add dev ns-wan0 txqueuelen 25000 type bridge
 ip link set dev ns-wan0 up
 ip link add dev ns-wan1 txqueuelen 25000 type bridge
 ip link set dev ns-wan1 up
+
 # [RealmGateway-A]
 ## LAN side
 ip link add dev ns-lan0-gwa txqueuelen 25000 type bridge
@@ -70,26 +90,10 @@ ip link set dev ns-lan0-gwa up
 # Create network namespace configuration
 ###############################################################################
 
-#Create the default namespace
-ln -s /proc/1/ns/net /var/run/netns/default > /dev/null 2> /dev/null
-
-for i in testgwa gwa router public; do
-    #Remove and create new namespaces
-    ip netns del $i > /dev/null 2> /dev/null
-    ip netns add $i
-    #Configure sysctl options
-    ip netns exec $i sysctl -w "net.ipv4.ip_forward=1"                 > /dev/null 2> /dev/null
-    ip netns exec $i sysctl -w "net.ipv6.conf.all.disable_ipv6=1"      > /dev/null 2> /dev/null
-    ip netns exec $i sysctl -w "net.ipv6.conf.default.disable_ipv6=1"  > /dev/null 2> /dev/null
-    ip netns exec $i sysctl -w "net.ipv6.conf.lo.disable_ipv6=1"       > /dev/null 2> /dev/null
-    #Configure the loopback interface in namespace
-    ip netns exec $i ip address add 127.0.0.1/8 dev lo
-    ip netns exec $i ip link set dev lo up
-    #Create new /etc mount point
-    mkdir -p  /etc/netns/$i
-    echo $i > /etc/netns/$i/hostname
-    #touch     /etc/netns/$i/resolv.conf
-done
+# Create the default namespace
+ln -s /proc/1/ns/net /var/run/netns/default &> /dev/null
+# Create the other namespaces
+for netns in router public gwa testgwa; do setup_basic_netns $netns; done
 
 ###############################################################################
 # Create host configuration
@@ -106,19 +110,16 @@ ip route add 100.64.0.0/16 via 100.64.0.1
 # Create router configuration
 ###############################################################################
 
-## Assign and configure namespace interface
+## Configure interface(s)
 ip link add link ns-wan0 dev wan0 txqueuelen 25000 type macvlan mode bridge
 ip link add link ns-wan1 dev wan1 txqueuelen 25000 type macvlan mode bridge
-ip link set wan0 netns router
-ip link set wan1 netns router
-ip netns exec router ip link set dev wan0 up
-ip netns exec router ip link set dev wan1 up
+ip link set dev wan0 up netns router
+ip link set dev wan1 up netns router
 ip netns exec router ip address add 100.64.0.1/24 dev wan0
 ip netns exec router ip address add 100.64.1.1/24 dev wan1
 ip netns exec router ip route add default via 100.64.0.254 dev wan0
 # Add _public_ test network(s) via public node
 ip netns exec router ip route add 100.64.248.0/21 via 100.64.0.100 dev wan0
-#ip netns exec router bash -c 'echo "nameserver 8.8.8.8" > /etc/resolv.conf'
 
 # Setting up TCP SYNPROXY in router - ipt_SYNPROXY
 # https://r00t-services.net/knowledgebase/14/Homemade-DDoS-Protection-Using-IPTables-SYNPROXY.html
@@ -136,29 +137,41 @@ ip netns exec router iptables -t filter -A FORWARD -p tcp -m conntrack --ctstate
 ip netns exec router dnsmasq --server=/gwa.demo/100.64.1.130         \
                              --server=/cname-gwa.demo/100.64.1.130   \
                              --server=8.8.8.8 --server=8.8.4.4       \
+                             --server=10.0.2.3                       \
                              --pid-file=/var/run/router.dnsmasq.pid  \
                              --no-negcache
+
+
+###############################################################################
+# Create public configuration
+###############################################################################
+
+## Configure interface(s)
+ip link add link ns-wan0 dev wan0 txqueuelen 25000 type macvlan mode bridge
+ip link set dev wan0 up netns public
+ip netns exec public ip address add 100.64.0.100/24 dev wan0
+ip netns exec public ip route add default via 100.64.0.1 dev wan0
+echo "nameserver 100.64.0.1" > /etc/netns/public/resolv.conf
+# Add _public_ test network(s) IP addresses to public node
+ip netns exec public bash -c "for ip in 100.64.{248..255}.{0..16}; do ip address add \$ip/32 dev wan0; done"
+
 
 ###############################################################################
 # Create gwa configuration
 ###############################################################################
 
-## Assign and configure namespace interface
+## Configure interface(s)
 ip link add link ns-wan1     dev wan0 txqueuelen 25000 type macvlan mode bridge
 ip link add link ns-lan0-gwa dev lan0 txqueuelen 25000 type macvlan mode bridge
-ip link set wan0 netns gwa
-ip link set lan0 netns gwa
-ip netns exec gwa ip link set dev lan0 up
-ip netns exec gwa ip link set dev wan0 up
+ip link set dev wan0 up netns gwa
+ip link set dev lan0 up netns gwa
 ip netns exec gwa ip address add 192.168.0.1/24  dev lan0
 ip netns exec gwa ip address add 100.64.1.130/24 dev wan0
 ip netns exec gwa ip route add default via 100.64.1.1 dev wan0
-#ip netns exec gwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
 echo "nameserver 100.64.0.1" > /etc/netns/gwa/resolv.conf
 
-
 # Add Circular Pool address for ARP responses
-ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip/32 dev wan0; done"
+ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip/24 dev wan0; done"
 
 
 ###############################################################################
@@ -166,11 +179,9 @@ ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip
 ###############################################################################
 
 ip link add link ns-lan0-gwa dev lan0 txqueuelen 25000 type macvlan mode bridge
-ip link set lan0 netns testgwa
-ip netns exec testgwa ip link set dev lan0 up
+ip link set dev lan0 up netns testgwa
 ip netns exec testgwa ip address add 192.168.0.100/24 dev lan0
 ip netns exec testgwa ip route add default via 192.168.0.1 dev lan0
-#ip netns exec testgwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 192.168.0.1" > /etc/resolv.conf'
 echo "nameserver 192.168.0.1" > /etc/netns/testgwa/resolv.conf
 # Add _private_ test IP addresses to testgwa node
 ip netns exec testgwa bash -c "for ip in 192.168.0.{200..209}; do ip address add \$ip/32 dev lan0; done"
@@ -178,17 +189,4 @@ ip netns exec testgwa bash -c "/realmgateway/scripts/echoserver.py              
                                   --tcp $(echo 192.168.0.{200..209}:{2000..2009}) \
                                   --udp $(echo 192.168.0.{200..209}:{2000..2009})" &> /dev/null &
 
-###############################################################################
-# Create public configuration
-###############################################################################
-
-## Assign and configure namespace interface
-ip link add link ns-wan0 dev wan0 txqueuelen 25000 type macvlan mode bridge
-ip link set wan0 netns public
-ip netns exec public ip link set dev wan0 up
-ip netns exec public ip address add 100.64.0.100/24 dev wan0
-ip netns exec public ip route add default via 100.64.0.1 dev wan0
-#ip netns exec public bash -c 'unlink /etc/resolv.conf; echo "nameserver 100.64.0.1" > /etc/resolv.conf'
-echo "nameserver 100.64.0.1" > /etc/netns/public/resolv.conf
-# Add _public_ test network(s) IP addresses to public node
-ip netns exec public bash -c "for ip in 100.64.{248..255}.{0..16}; do ip address add \$ip/32 dev wan0; done"
+echo "Setup completed!"

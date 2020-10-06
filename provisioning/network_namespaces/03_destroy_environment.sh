@@ -56,6 +56,7 @@ ip link set dev ns-wan0 down
 ip link del dev ns-wan0
 ip link set dev ns-wan1 down
 ip link del dev ns-wan1
+
 # [RealmGateway-A]
 ## LAN side
 ip link set dev ns-lan0-gwa down
@@ -66,13 +67,8 @@ ip link del dev ns-lan0-gwa
 # Create network namespace configuration
 ###############################################################################
 
-#Create the default namespace
-ln -s /proc/1/ns/net /var/run/netns/default > /dev/null 2> /dev/null
-
-#Remove namespaces
-for i in testgwa gwa router public; do
-    ip netns del $i > /dev/null 2> /dev/null
-done
+# Remove the namespaces
+for netns in router public gwa testgwa; do ip netns del $netns &> /dev/null; done
 
 # Kill dnsmasq running in router netns and cleanup pid file
 pkill -F /var/run/router.dnsmasq.pid &> /dev/null || true
@@ -80,3 +76,5 @@ rm       /var/run/router.dnsmasq.pid &> /dev/null || true
 
 # Destroy OpenvSwitch instance created by RealmGateway
 ovs-vsctl --if-exists del-br ovs-ces
+
+echo "Cleanup completed!"
