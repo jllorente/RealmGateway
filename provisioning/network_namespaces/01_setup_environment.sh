@@ -173,10 +173,10 @@ ip netns exec testgwa ip route add default via 192.168.0.1 dev lan0
 #ip netns exec testgwa bash -c 'unlink /etc/resolv.conf; echo "nameserver 192.168.0.1" > /etc/resolv.conf'
 echo "nameserver 192.168.0.1" > /etc/netns/testgwa/resolv.conf
 # Add _private_ test IP addresses to testgwa node
-ip netns exec testgwa bash -c "for ip in 192.168.0.{101..250}; do ip address add \$ip/32 dev lan0; done"
+ip netns exec testgwa bash -c "for ip in 192.168.0.{200..209}; do ip address add \$ip/32 dev lan0; done"
 ip netns exec testgwa bash -c "/realmgateway/scripts/echoserver.py                \
-                                  --tcp $(echo 192.168.0.{101..250}:{10000..10009}) \
-                                  --udp $(echo 192.168.0.{101..250}:{10000..10009})" &> /dev/null &
+                                  --tcp $(echo 192.168.0.{200..209}:{2000..2009}) \
+                                  --udp $(echo 192.168.0.{200..209}:{2000..2009})" &> /dev/null &
 
 ###############################################################################
 # Create public configuration

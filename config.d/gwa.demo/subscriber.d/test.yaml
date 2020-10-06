@@ -8,9 +8,9 @@ test.gwa.demo.:
     CIRCULARPOOL:
         max: 100
     SFQDN:
-        - {fqdn:          'test.gwa.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test.gwa.demo.',  proxy_required: true , carriergrade: false                             }
-        - {fqdn:      'sip.test.gwa.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test.gwa.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test.gwa.demo.',  proxy_required: true , carriergrade: false}
+        - {fqdn:      'sip.test.gwa.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:     'icmp.test.gwa.demo.',  proxy_required: false, carriergrade: false, protocol: 1,    port: 0    }
         - {fqdn:     'ping.test.gwa.demo.',  proxy_required: false, carriergrade: false, protocol: 1,    port: 0    }
         - {fqdn:      'tcp.test.gwa.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 0    }
@@ -33,5 +33,5 @@ test.gwa.demo.:
             - {'priority': 50,  'direction': 'INGRESS', 'protocol': '132', 'sctp':{'dport': '12345'},                        'target': 'DROP',   'comment':{'comment':'Deny port 12345'}}
             - {'priority': 50,  'direction': 'EGRESS',  'dst': '8.8.4.4/32', 'protocol': '17', 'udp':{'dport': '53'},        'target': 'ACCEPT', 'comment':{'comment':'Allow DNS to Google#2'}}
             - {'priority': 50,  'direction': 'EGRESS',  'dst': '8.8.8.8/32', 'protocol': '17', 'udp':{'dport': '53'},        'target': 'DROP',   'comment':{'comment':'Deny  DNS to Google#1'}}
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}

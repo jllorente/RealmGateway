@@ -8,8 +8,8 @@ test200.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test200.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test200.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test200.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test200.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test200.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test200.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test200.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -47,8 +47,8 @@ test200.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test201.gwb.demo.:
     ID:
@@ -60,8 +60,8 @@ test201.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test201.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test201.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test201.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test201.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test201.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test201.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test201.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -99,8 +99,8 @@ test201.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test202.gwb.demo.:
     ID:
@@ -112,8 +112,8 @@ test202.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test202.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test202.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test202.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test202.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test202.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test202.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test202.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -151,8 +151,8 @@ test202.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test203.gwb.demo.:
     ID:
@@ -164,8 +164,8 @@ test203.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test203.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test203.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test203.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test203.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test203.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test203.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test203.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -203,8 +203,8 @@ test203.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test204.gwb.demo.:
     ID:
@@ -216,8 +216,8 @@ test204.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test204.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test204.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test204.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test204.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test204.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test204.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test204.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -255,8 +255,8 @@ test204.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test205.gwb.demo.:
     ID:
@@ -268,8 +268,8 @@ test205.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test205.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test205.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test205.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test205.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test205.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test205.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test205.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -307,8 +307,8 @@ test205.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test206.gwb.demo.:
     ID:
@@ -320,8 +320,8 @@ test206.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test206.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test206.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test206.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test206.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test206.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test206.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test206.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -359,8 +359,8 @@ test206.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test207.gwb.demo.:
     ID:
@@ -372,8 +372,8 @@ test207.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test207.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test207.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test207.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test207.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test207.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test207.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test207.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -411,8 +411,8 @@ test207.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test208.gwb.demo.:
     ID:
@@ -424,8 +424,8 @@ test208.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test208.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test208.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test208.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test208.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test208.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test208.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test208.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -463,8 +463,8 @@ test208.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
 
 test209.gwb.demo.:
     ID:
@@ -476,8 +476,8 @@ test209.gwb.demo.:
     CIRCULARPOOL:
         max: 1000
     SFQDN:
-        - {fqdn:          'test209.gwb.demo.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test209.gwb.demo.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test209.gwb.demo.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test209.gwb.demo.',  proxy_required: true , carriergrade: false}
         - {fqdn:  'tcp2000.test209.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2000 }
         - {fqdn:  'tcp2001.test209.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2001 }
         - {fqdn:  'tcp2002.test209.gwb.demo.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 2002 }
@@ -515,5 +515,5 @@ test209.gwb.demo.:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS', 'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
         FIREWALL_USER:
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}

@@ -38,7 +38,7 @@ Vagrant.configure(2) do |config|
             apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
             apt install -y iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
             apt install -y iptables ipset bridge-utils conntrack lxc python3-lxc python3-yaml openvswitch-switch openvswitch-vtep
-            apt install -y dnsutils curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
+            apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
             # Add DKMS support for compiled modules?
             # apt install -y xtables-addons-common xtables-addons-dkms libelf-dev
         SHELL
@@ -55,6 +55,37 @@ Vagrant.configure(2) do |config|
             dpkg --skip-same-version --install /tmp/vagrant_2.2.10_x86_64.deb
             rm /tmp/vagrant_2.2.10_x86_64.deb
             vagrant plugin install vagrant-lxc
+        SHELL
+
+        # Configure common services
+        node.vm.provision "shell", inline: <<-SHELL
+            systemctl stop apt-daily.timer apt-daily-upgrade.timer systemd-resolved
+            # Use local dnsmasq instance
+            cat <<EOF > /etc/resolv.conf
+nameserver 127.0.0.1
+EOF
+            # Write custom configuration for local dnsmasq instance
+            cat <<EOF > /etc/dnsmasq.d/rgw.conf
+# Forward to router *.demo SOA zone
+server=/demo/100.64.0.1#53
+
+# Forward to router *.64.100.in-addr.arpa SOA zone
+server=/64.100.in-addr.arpa/100.64.0.1#53
+
+# Forward to VirtualBox and Google DNS all other queries
+server=10.0.2.3
+server=8.8.8.8
+server=8.8.4.4
+
+# Other options
+no-dhcp-interface=lo
+no-negcache
+user=dnsmasq
+pid-file=/var/run/dnsmasq/dnsmasq.pid
+log-facility=/var/log/dnsmasq
+EOF
+            # Restart service with new configuration
+            systemctl restart dnsmasq.service
         SHELL
 
         # Enable iptables MASQUERADE on the default network interface

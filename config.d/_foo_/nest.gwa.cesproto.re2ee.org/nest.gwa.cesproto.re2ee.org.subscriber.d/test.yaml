@@ -13,9 +13,9 @@ test.nest.gwa.cesproto.re2ee.org.:
         - {ipv4: 192.168.10.11}
         - {ipv4: 192.168.10.12}
     SFQDN:
-        - {fqdn:          'test.nest.gwa.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false                             }
-        - {fqdn:      'sip.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test.nest.gwa.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false}
+        - {fqdn:      'sip.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false}
         - {fqdn:     'icmp.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false, protocol: 1,    port: 0    }
         - {fqdn:     'ping.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false, protocol: 1,    port: 0    }
         - {fqdn:      'tcp.test.nest.gwa.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false, protocol: 6,    port: 0    }
@@ -37,5 +37,5 @@ test.nest.gwa.cesproto.re2ee.org.:
             - {'priority': 50,  'direction': 'INGRESS', 'protocol': '132', 'sctp':{'dport': '12345'},                        'target': 'DROP',   'comment':{'comment':'Deny port 12345'}}
             - {'priority': 50,  'direction': 'EGRESS',  'dst': '8.8.4.4/32', 'protocol': '17', 'udp':{'dport': '53'},        'target': 'ACCEPT', 'comment':{'comment':'Allow DNS to Google#2'}}
             - {'priority': 50,  'direction': 'EGRESS',  'dst': '8.8.8.8/32', 'protocol': '17', 'udp':{'dport': '53'},        'target': 'DROP',   'comment':{'comment':'Deny  DNS to Google#1'}}
-            - {'priority': 100, 'direction': 'EGRESS',                                                                       'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
-            - {'priority': 100, 'direction': 'INGRESS',                                                                      'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}
+            - {'priority': 100, 'direction': 'EGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow outgoing'}}
+            - {'priority': 100, 'direction': 'INGRESS', 'target': 'ACCEPT', 'comment':{'comment':'Allow incoming'}}

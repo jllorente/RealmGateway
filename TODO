@@ -18,3 +18,4 @@ TODO:
  - netns provisioning breaks system's resolv.conf
  - where is suricata used?
  - ports in subscriber.d test.gwa do not match echoserver service!
+ - remove msisdn from host IDs ?

@@ -8,9 +8,9 @@ test102.nest.gwb.cesproto.re2ee.org.:
     CIRCULARPOOL:
         max: 3
     SFQDN:
-        - {fqdn:          'test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false                             }
-        - {fqdn:      'www.test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false                             }
-        - {fqdn:      'sip.test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false                             }
+        - {fqdn:          'test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: false, carriergrade: false}
+        - {fqdn:      'www.test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false}
+        - {fqdn:      'sip.test102.nest.gwb.cesproto.re2ee.org.',  proxy_required: true , carriergrade: false}
     FIREWALL:
         FIREWALL_ADMIN:
             - {'priority': 0,   'direction': 'EGRESS',  'protocol': '17', 'udp':{'dport': '53'}, 'target': 'REJECT', 'hashlimit': {'hashlimit-above':'5/sec', 'hashlimit-burst':'50', 'hashlimit-name':'DnsLanHosts', 'hashlimit-mode':'srcip', 'hashlimit-htable-expire':'1001'}, 'comment':{'comment':'Host DNS limit'}}
