@@ -413,13 +413,13 @@ dns.edns._type_to_class[ECID]  = _EDNS0_EClientID_
 ####################################################################################################
 ####################################################################################################
 
-def _make_query(fqdn, rdtype, rdclass, socktype='udp', client_addr=None, client_mask=None, edns_options=None):
+def _make_query(fqdn, rdtype, rdclass, socktype='udp', client_addr=None, ecs_srclen=None, edns_options=None):
     options = []
     # Create EDNS options from iterable
     if edns_options is not None:
         for opt in edns_options:
             if opt == 'ecs':
-                options.append(_EDNS0_ECSOption_(client_addr, srclen=client_mask, scopelen=0))
+                options.append(_EDNS0_ECSOption_(client_addr, srclen=ecs_srclen, scopelen=0))
             elif opt == 'eci':
                 # Set socket type
                 if socktype in ['tcp', 6]:
@@ -487,7 +487,7 @@ async def _sendrecv(data, raddr, laddr, timeouts=[0], socktype='udp', reuseaddr=
     return (recvdata, attempt)
 
 
-async def _gethostbyname(fqdn, raddr, laddr, timeouts=[0], socktype='udp', reuseaddr=True, client_addr=None, client_mask=None, edns_options=None, mark=0):
+async def _gethostbyname(fqdn, raddr, laddr, timeouts=[0], socktype='udp', reuseaddr=True, client_addr=None, ecs_srclen=None, edns_options=None, mark=0):
     """
     fqdn: Domain name to be resolved
     raddr: Remote tuple information
@@ -504,7 +504,7 @@ async def _gethostbyname(fqdn, raddr, laddr, timeouts=[0], socktype='udp', reuse
     response = None
 
     # Create DNS query
-    query = _make_query(fqdn, rdtype, rdclass, socktype, client_addr, client_mask, edns_options)
+    query = _make_query(fqdn, rdtype, rdclass, socktype, client_addr, ecs_srclen, edns_options)
 
     if socktype == 'udp':
         data = query.to_wire()
@@ -519,7 +519,7 @@ async def _gethostbyname(fqdn, raddr, laddr, timeouts=[0], socktype='udp', reuse
         # Check if response is truncated and retry in TCP with a recursive call
         if (response.flags & dns.flags.TC == dns.flags.TC):
             logger.debug('Truncated response, reattempt via TCP: {} via {}:{} > {}:{} ({})'.format(fqdn, laddr[0], laddr[1], raddr[0], raddr[1], socktype))
-            return await _gethostbyname(fqdn, raddr, laddr, timeouts, socktype='tcp', reuseaddr=reuseaddr, client_addr=client_addr, client_mask=client_mask, edns_options=edns_options, mark=mark)
+            return await _gethostbyname(fqdn, raddr, laddr, timeouts, socktype='tcp', reuseaddr=reuseaddr, client_addr=client_addr, ecs_srclen=ecs_srclen, edns_options=edns_options, mark=mark)
 
     elif socktype == 'tcp':
         _data = query.to_wire()
@@ -550,7 +550,7 @@ async def _gethostbyname(fqdn, raddr, laddr, timeouts=[0], socktype='udp', reuse
             if rdata.rdtype == dns.rdatatype.CNAME:
                 target = rdata.to_text()
                 logger.debug('Resolution continues: {} via {}:{} > {}:{} ({}) yielded {}'.format(fqdn, laddr[0], laddr[1], raddr[0], raddr[1], socktype, target))
-                return await _gethostbyname(target, raddr, laddr, timeouts, socktype='udp', reuseaddr=reuseaddr, client_addr=client_addr, client_mask=client_mask, edns_options=edns_options, mark=mark)
+                return await _gethostbyname(target, raddr, laddr, timeouts, socktype='udp', reuseaddr=reuseaddr, client_addr=client_addr, ecs_srclen=ecs_srclen, edns_options=edns_options, mark=mark)
 
     # Resolution did not succeed
     logger.debug('Resolution failed: {} via {}:{} > {}:{} ({})'.format(fqdn, laddr[0], laddr[1], raddr[0], raddr[1], socktype))
@@ -663,7 +663,7 @@ class RealDNSDataTraffic(_TestTraffic):
         dns_delay_t = kwargs.setdefault('dns_delay', (0,0))
         data_delay_t = kwargs.setdefault('data_delay', (0,0))
         data_backoff_t = kwargs.setdefault('data_backoff', (0,0))
-        edns_options = kwargs.get('edns_options', [])
+        metadata = kwargs.get('metadata', {})
         # Adjust next taskdelay time
         taskdelay = kwargs['ts_start']
         iterations = int(kwargs['load'] * kwargs['duration'])
@@ -698,7 +698,7 @@ class RealDNSDataTraffic(_TestTraffic):
             args_d = {'task_nth': task_nth, 'task_type': task_type, 'reuseaddr': reuseaddr,
                       'dns_laddr': dns_laddr, 'dns_raddr': dns_raddr, 'dns_timeouts': dns_timeouts, 'dns_delay': dns_delay,
                       'data_laddr': data_laddr, 'data_raddr': data_raddr, 'data_timeouts': data_timeouts, 'data_delay': data_delay, 'data_backoff': data_backoff,
-                      'edns_options': edns_options,
+                      'metadata': metadata,
                       }
             # Append the newly defined task with its parameters
             scheduled_tasks.append({'offset': taskdelay - TS_ZERO, 'cls': task_type, 'kwargs': args_d})
@@ -722,7 +722,7 @@ class RealDNSDataTraffic(_TestTraffic):
         data_delay      = kwargs['data_delay']
         data_backoff    = kwargs['data_backoff']
         reuseaddr       = kwargs['reuseaddr']
-        edns_options    = kwargs.get('edns_options', [])
+        metadata        = kwargs['metadata']
 
         RealDNSDataTraffic.logger.info('[{:.4f}] Running task #{}'.format(_now(TS_ZERO), task_nth))
         ts_start = _now()
@@ -740,10 +740,14 @@ class RealDNSDataTraffic(_TestTraffic):
         # Select socket type based on protocol number
         data_sockettype = 'tcp' if data_rproto == 6 else 'udp'
 
+        # Get variable metadata
+        edns_options = metadata.get('edns_options', None)
+        ecs_srclen = metadata.get('edns_ecs_srclen', 24)
+
         ## Run DNS resolution
         data_ripaddr, query_id, dns_attempts = await _gethostbyname(data_fqdn, (dns_ripaddr, dns_rport), (dns_lipaddr, dns_lport),
                                                                     timeouts=dns_timeouts, socktype=dns_sockettype,
-                                                                    reuseaddr=reuseaddr, client_addr=data_lipaddr, client_mask=24,
+                                                                    reuseaddr=reuseaddr, client_addr=data_lipaddr, ecs_srclen=ecs_srclen,
                                                                     edns_options=edns_options, mark=dns_delay)
 
         # Populate partial results
@@ -813,7 +817,7 @@ class RealDNSTraffic(_TestTraffic):
         # Set default variables that might not be defined in configuration / Allow easy test of specific features
         reuseaddr = kwargs.setdefault('reuseaddr', True)
         dns_delay_t = kwargs.setdefault('dns_delay', (0,0))
-        edns_options = kwargs.get('edns_options', [])
+        metadata = kwargs.get('metadata', {})
         # Adjust next taskdelay time
         taskdelay = kwargs['ts_start']
         iterations = int(kwargs['load'] * kwargs['duration'])
@@ -844,7 +848,7 @@ class RealDNSTraffic(_TestTraffic):
             args_d = {'task_nth': task_nth, 'task_type': task_type, 'reuseaddr': reuseaddr,
                       'dns_laddr': dns_laddr, 'dns_raddr': dns_raddr, 'dns_timeouts': dns_timeouts, 'dns_delay': dns_delay,
                       'data_laddr': data_laddr, 'data_raddr': data_raddr,
-                      'edns_options': edns_options,
+                      'metadata': metadata,
                       }
             # Append the newly defined task with its parameters
             scheduled_tasks.append({'offset': taskdelay - TS_ZERO, 'cls': task_type, 'kwargs': args_d})
@@ -864,7 +868,7 @@ class RealDNSTraffic(_TestTraffic):
         data_laddr      = kwargs['data_laddr']
         data_raddr      = kwargs['data_raddr']
         reuseaddr       = kwargs['reuseaddr']
-        edns_options    = kwargs['edns_options']
+        metadata        = kwargs['metadata']
 
         RealDNSTraffic.logger.info('[{:.4f}] Running task #{}'.format(_now(TS_ZERO), task_nth))
         ts_start = _now()
@@ -879,10 +883,15 @@ class RealDNSTraffic(_TestTraffic):
         # Unpack Data related data
         data_fqdn,    data_rport, data_rproto = data_raddr
         data_lipaddr, data_lport, data_lproto = data_laddr
+
+        # Get variable metadata
+        edns_options = metadata.get('edns_options', None)
+        ecs_srclen = metadata.get('edns_ecs_srclen', 24)
+
         ## Run DNS resolution
         data_ripaddr, query_id, dns_attempts = await _gethostbyname(data_fqdn, (dns_ripaddr, dns_rport), (dns_lipaddr, dns_lport),
                                                                     timeouts=dns_timeouts, socktype=dns_sockettype,
-                                                                    reuseaddr=reuseaddr, client_addr=data_lipaddr, client_mask=24,
+                                                                    reuseaddr=reuseaddr, client_addr=data_lipaddr, ecs_srclen=ecs_srclen,
                                                                     edns_options=edns_options, mark=dns_delay)
 
         # Populate partial results
@@ -1043,8 +1052,10 @@ class SpoofDNSTraffic(_TestTraffic):
             # Pre-compute packet build to avoid lagging due to Scapy.
             ## Build query message
             interface = kwargs.get('interface', None)
-            edns_options = kwargs.get('edns_options', [])
-            query = _make_query(data_raddr[0], dns.rdatatype.A, dns.rdataclass.IN, 'udp', dns_laddr[0], 24, edns_options)
+            metadata = kwargs.get('metadata', {})
+            edns_options = metadata.get('edns_options', None)
+            ecs_srclen = metadata.get('edns_ecs_srclen', 24)
+            query = _make_query(data_raddr[0], dns.rdatatype.A, dns.rdataclass.IN, 'udp', dns_laddr[0], ecs_srclen, edns_options)
             data_b = query.to_wire()
             eth_pkt = _scapy_build_packet(dns_laddr[0], dns_raddr[0], dns_raddr[2], dns_laddr[1], dns_raddr[1], data_b)
             ## Encode/decode to base64 for obtaning str representation / serializable
@@ -1060,6 +1071,7 @@ class SpoofDNSTraffic(_TestTraffic):
                       'dns_laddr': dns_laddr, 'dns_raddr': dns_raddr,
                       'data_laddr': data_laddr, 'data_raddr': data_raddr,
                       'eth_pkt': eth_pkt_str, 'interface': interface,
+                      'metadata': metadata,
                       }
             # Append the newly defined task with its parameters
             scheduled_tasks.append({'offset': taskdelay - TS_ZERO, 'cls': task_type, 'kwargs': args_d})
@@ -1552,7 +1564,7 @@ global_traffic:
 traffic:
     # Example of tests with global_traffic parameters
     - {type: "dnsdata",   load: 2}
-    - {type: "dns",       load: 2, distribution: "exp", edns_options: ["ecs"]}
+    - {type: "dns",       load: 2, distribution: "exp", metadata: {edns_options: ["ecs"], edns_ecs_srclen: 32}}}
     - {type: "data",      load: 2, distribution: "uni"}
     - {type: "dataspoof", load: 2, interface: "ens18"}
     - {type: "dnsspoof",  load: 2, interface: "ens18"}

@@ -774,6 +774,15 @@ class PolicyBasedResourceAllocation(container3.Container):
 
         self._logger.debug('WAN SOA pre-process for {} / {}'.format(fqdn, service_data))
 
+        # Define default policy values
+        policy_tcp = self.PBRA_DNS_POLICY_TCP
+        policy_cname = self.PBRA_DNS_POLICY_CNAME
+        policy_tcp_cname = self.PBRA_DNS_POLICY_TCPCNAME
+        ## Probability defauls to 1 (always)
+        prob_tcp = 1
+        prob_cname = 1
+        prob_tcp_cname = 1
+
         # Load available reputation metadata in query object
         resolver_policy = self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
         # Create reputation information for requestor if resolver has SLA enabled
@@ -783,14 +792,14 @@ class PolicyBasedResourceAllocation(container3.Container):
         # Log untrusted requests
         self._dns_preprocess_rgw_wan_soa_event_logging(query, alias)
 
-        # Evaluate pre-conditions
-        policy_tcp = resolver_policy.metadata.get('tcp', self.PBRA_DNS_POLICY_TCP)
-        policy_cname = resolver_policy.metadata.get('cname', self.PBRA_DNS_POLICY_CNAME)
-        policy_tcp_cname = resolver_policy.metadata.get('tcp_cname', self.PBRA_DNS_POLICY_TCPCNAME)
-        ## Get probability options - defaults to 1 (always)
-        prob_tcp = resolver_policy.metadata.get('tcp_prob', 1)
-        prob_cname = resolver_policy.metadata.get('cname_prob', 1)
-        prob_tcp_cname = resolver_policy.metadata.get('tcp_cname_prob', 1)
+        # Overwrite policy values for a configured resolver
+        if resolver_policy:
+            policy_tcp = resolver_policy.metadata.get('tcp', policy_tcp)
+            policy_cname = resolver_policy.metadata.get('cname', policy_cname)
+            policy_tcp_cname = resolver_policy.metadata.get('tcp_cname', policy_tcp_cname)
+            prob_tcp = resolver_policy.metadata.get('tcp_prob', prob_tcp)
+            prob_cname = resolver_policy.metadata.get('cname_prob', prob_cname)
+            prob_tcp_cname = resolver_policy.metadata.get('tcp_cname_prob', prob_tcp_cname)
 
         # Define probability function
         one_in_n = lambda x: random.randint(1, x) == 1
