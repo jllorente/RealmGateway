@@ -319,7 +319,7 @@ class RealmGateway(object):
         _t = asyncio.ensure_future(self._init_cleanup_pbra_timers(10.0))
         RUNNING_TASKS.append((_t, "cleanup_pbra_timers"))
         # Create task: Show DNS groups
-        _t = asyncio.ensure_future(self._init_show_dnsgroups(20.0))
+        _t = asyncio.ensure_future(self._init_show_dnsgroups(60.0))
         RUNNING_TASKS.append((_t, "show_dnsgroups"))
         # Initialize Subscriber information
         yield from self._init_subscriberdata()

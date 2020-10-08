@@ -342,6 +342,9 @@ class uStateDNSGroup(container3.ContainerNode):
         # Define a list for uStateDNSResolver ipaddresses
         self.nodes = []
 
+        # Define a dict of variable metadata
+        self.metadata = {}
+
         # Override attributes
         utils3.set_attributes(self, override=True, **kwargs)
 
@@ -539,7 +542,7 @@ class PolicyBasedResourceAllocation(container3.Container):
     PBRA_DNS_POLICY_TCPCNAME  = False
     PBRA_DNS_POLICY_TCP       = False
     PBRA_DNS_POLICY_CNAME     = False
-    PBRA_DNS_LOG_UNTRUSTED    = False
+    PBRA_DNS_LOG_UNTRUSTED    = True
     # Define default system load policies
     SYSTEM_LOAD = [
                    #{'threshold_min': 80, 'threshold_max': 100, 'fqdn_new': 1.0, 'sfqdn_new': 0.8, 'sfqdn_reuse': 0.7, 'math': 'min'},
@@ -602,26 +605,26 @@ class PolicyBasedResourceAllocation(container3.Container):
 
     def cleanup_timers(self):
         """ Perform a cleanup of expired timer objects """
-        self._logger.warning('Initiating cleanup of timers')
+        self._logger.info('Initiating cleanup of timers')
         nodes = self.lookup(KEY_TIMER, update=False, check_expire=False)
         if nodes is None:
             return
         for node in list(nodes):
             if node.hasexpired():
                 self.remove(node)
-        self._logger.warning('Terminated cleanup of timers')
+        self._logger.info('Terminated cleanup of timers')
 
     def debug_dnsgroups(self, transition = False):
         # For debugging purposes
-        self._logger.warning('Initiating debug_dnsgroups: transition={}'.format(transition))
+        self._logger.info('Initiating debug_dnsgroups: transition={}'.format(transition))
         nodes = self.lookup(KEY_DNS_REPUTATION, update=False, check_expire=False)
         if nodes and transition:
             for node in nodes:
-                self._logger.warning('[1] {}\n\t>> {}'.format(node, node.reputation_current))
+                self._logger.info('[1] {}\n\t>> {}'.format(node, node.reputation_current))
                 node.transition_period()
-                self._logger.warning('[2] {}\n\t>> {}'.format(node, node.reputation_current))
+                self._logger.info('[2] {}\n\t>> {}'.format(node, node.reputation_current))
 
-        self._logger.warning('Terminated debug_dnsgroups: transition={}'.format(transition))
+        self._logger.info('Terminated debug_dnsgroups: transition={}'.format(transition))
 
     def _policy_tcp(self, query):
         # Answer TRUNCATED
@@ -651,8 +654,11 @@ class PolicyBasedResourceAllocation(container3.Container):
         return response, cname_fqdn
 
     def _load_metadata_resolver(self, query, addr, create=False):
+        """ Return uStateDNSGroup object or None"""
         # Collect metadata from DNS query related to resolver based on IP address
-        if self.has((KEY_DNSGROUP_IPADDR, addr[0])) is False and create is True:
+        if self.has((KEY_DNSGROUP_IPADDR, addr[0])) is False and create is False:
+            return None
+        elif self.has((KEY_DNSGROUP_IPADDR, addr[0])) is False and create is True:
             # Create resolver reputation of the DNS query
             ## Create new DNS node
             dnsnode_obj = uStateDNSResolver(ipaddr=addr[0])
@@ -663,11 +669,12 @@ class PolicyBasedResourceAllocation(container3.Container):
             self.add(dnsgroup_obj)
             # Add reputation to the DNS query
             query.reputation_resolver = dnsgroup_obj
-            return
+            return dnsgroup_obj
         else:
             # Add reputation to the DNS query
             dnsgroup_obj = self.lookup((KEY_DNSGROUP_IPADDR, addr[0]))
             query.reputation_resolver = dnsgroup_obj
+            return dnsgroup_obj
 
     def _load_metadata_requestor(self, query, addr, create=False):
         # Collect metadata from DNS query related to requestor based on DNS options (EDNS0)
@@ -759,6 +766,8 @@ class PolicyBasedResourceAllocation(container3.Container):
             - Dynamic enforcing of TCPCNAME or CNAME policies based on reputation of the sender ?
             - Neutral events may indicate a correct behaviour of a server (DNSoTCP or CNAME follow-up), however,
             limiting the penalty to a host-only, my open the door to rogue servers impersonating numerous clients. Tread carefully!!!
+            - When loading requestor metadata, create=True only if the resolver has SLA
+            - Load PBRA control variable policies from DNS_GROUP with fallback to defaults
         '''
         fqdn = query.fqdn
         alias = service_data['alias']
@@ -766,31 +775,41 @@ class PolicyBasedResourceAllocation(container3.Container):
         self._logger.debug('WAN SOA pre-process for {} / {}'.format(fqdn, service_data))
 
         # Load available reputation metadata in query object
-        self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
-        # Create always reputation information (it will be used depending on the policy)
-        self._load_metadata_requestor(query, addr, create=True)
+        resolver_policy = self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
+        # Create reputation information for requestor if resolver has SLA enabled
+        _create_requestor = True if resolver_policy and resolver_policy.sla else False
+        self._load_metadata_requestor(query, addr, create=_create_requestor)
 
         # Log untrusted requests
         self._dns_preprocess_rgw_wan_soa_event_logging(query, alias)
 
-
         # Evaluate pre-conditions
+        policy_tcp = resolver_policy.metadata.get('tcp', self.PBRA_DNS_POLICY_TCP)
+        policy_cname = resolver_policy.metadata.get('cname', self.PBRA_DNS_POLICY_CNAME)
+        policy_tcp_cname = resolver_policy.metadata.get('tcp_cname', self.PBRA_DNS_POLICY_TCPCNAME)
+        ## Get probability options - defaults to 1 (always)
+        prob_tcp = resolver_policy.metadata.get('tcp_prob', 1)
+        prob_cname = resolver_policy.metadata.get('cname_prob', 1)
+        prob_tcp_cname = resolver_policy.metadata.get('tcp_cname_prob', 1)
+
+        # Define probability function
+        one_in_n = lambda x: random.randint(1, x) == 1
 
         # Anti spoofing mechanisms are not enabled, continue with query processing
-        if (self.PBRA_DNS_POLICY_TCPCNAME, self.PBRA_DNS_POLICY_TCP, self.PBRA_DNS_POLICY_CNAME) == (False, False, False):
+        if (policy_tcp, policy_cname, policy_tcp_cname) == (False, False, False):
             self._logger.debug('Anti spoofing mechanisms are not enabled, continue with query processing')
             return None
 
-        ## Enforce PBRA_DNS_POLICY_TCPCNAME
-        if query.transport == 'udp' and self.PBRA_DNS_POLICY_TCPCNAME:
+        ## Enforce TCP-CNAME policy
+        if query.transport == 'udp' and policy_tcp_cname and one_in_n(prob_tcp_cname):
             ## Create truncated response
             response = self._policy_tcp(query)
             self._logger.debug('Create TRUNCATED response / {}'.format(service_data))
             return response
 
-        ## Enforce PBRA_DNS_POLICY_TCP
+        ## Enforce TCP policy
         ### Applies to UDP queries only
-        if query.transport == 'udp' and self.PBRA_DNS_POLICY_TCP and alias is False:
+        if query.transport == 'udp' and policy_tcp and one_in_n(prob_tcp) and alias is False:
             # Ensure spoofed-free communications by triggering TCP requests
             ## Create truncated response
             response = self._policy_tcp(query)
@@ -800,12 +819,12 @@ class PolicyBasedResourceAllocation(container3.Container):
         # Continue processing with *trusted* DNS query
         #self._logger.debug('WAN SOA detected trusted query for {} / {}'.format(fqdn, service_data))
 
-        ## Enforce PBRA_DNS_POLICY_CNAME
-        if self.PBRA_DNS_POLICY_CNAME is False:
+        ## Enforce CNAME policy
+        if policy_cname is False:
             self._logger.debug('CNAME policy not enabled / {}'.format(service_data))
             return None
 
-        if self.PBRA_DNS_POLICY_CNAME and alias is False:
+        if policy_cname and one_in_n(prob_cname) and alias is False:
             # Create CNAME response
             response, _fqdn = self._policy_cname(query)
             # Register alias service in host
@@ -819,15 +838,15 @@ class PolicyBasedResourceAllocation(container3.Container):
             # Evaluate resolver metadata and create new if does not exist
             if query.reputation_resolver is None:
                 # Create reputation metadata in query object
-                self._load_metadata_resolver(query, addr, create=True)
+                self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
 
             self._logger.debug('Create CNAME response / {}'.format(alias_service_data))
             # Return CNAME response
             return response
 
         # Evaluate seen IP addresses for current FQDN
-        timer_obj = self.get((KEY_TIMER_FQDN, fqdn))
-        if timer_obj.ipaddr not in query.reputation_resolver.nodes:
+        timer_obj = self.lookup((KEY_TIMER_FQDN, fqdn))
+        if timer_obj and timer_obj.ipaddr not in query.reputation_resolver.nodes:
             # Merge DNS groups
             group1 = query.reputation_resolver
             group2 = self.get((KEY_DNSGROUP_IPADDR, timer_obj.ipaddr))
@@ -976,21 +995,16 @@ class PolicyBasedResourceAllocation(container3.Container):
         fqdn, sfqdn_reuse = self._describe_service_data(service_data, partial_reuse=False)
         sfqdn = not fqdn
 
-        # Calculate normalized reputations for a query
-        r_resolver = 0
-        r_requestor = 0
-        if query.reputation_resolver:
-            r_resolver = query.reputation_resolver.reputation
-        if query.reputation_requestor:
-            r_requestor = query.reputation_requestor.reputation
-
-        # Obtain IP addressing information of DNS parties for improved logging
-        dns_host_ipaddr = query.reputation_requestor.ipaddr if query.reputation_requestor else None
-        dns_resolver_ipaddr = addr[0]
-
+        # Obtain reputations from a query
+        r_resolver = query.reputation_resolver.reputation if query.reputation_resolver else PBRA_REPUTATION_MIDDLE
+        r_requestor = query.reputation_requestor.reputation if query.reputation_requestor else PBRA_REPUTATION_MIDDLE
         # Normalize reputation values
         r_resolver = self._normalize_reputation_value(r_resolver)
         r_requestor = self._normalize_reputation_value(r_requestor)
+
+        # Obtain IP addressing information of DNS parties for improved logging
+        dns_resolver_ipaddr = addr[0]
+        dns_host_ipaddr = query.reputation_requestor.ipaddr if query.reputation_requestor else None
 
         # Define allocation service for easy logging
         if fqdn:
@@ -1002,7 +1016,7 @@ class PolicyBasedResourceAllocation(container3.Container):
 
         # Obtain load policy parameters
         load_policies = [entry for entry in self.SYSTEM_LOAD if (sysload >= entry['threshold_min'] and sysload <= entry['threshold_max'])]
-        self._logger.info('System load at {:.2f}%% / Attempting match of {} policy(ies)'.format(sysload, len(load_policies)))
+        self._logger.debug('System load at {:.2f}%% / Attempting match of {} policy(ies)'.format(sysload, len(load_policies)))
 
         for i, policy in enumerate(load_policies):
             self._logger.debug('>> [{}/{}] Testing policy / {}'.format(i+1, len(load_policies), policy))
@@ -1023,7 +1037,7 @@ class PolicyBasedResourceAllocation(container3.Container):
                 return allocated_ipv4
 
             # Fine-grained logging of policy violation
-            self._logger.warning('Policy violation! {}'.format(log_msg))
+            self._logger.debug('Policy violation! {}'.format(log_msg))
 
         # No policy could be executed
         return None
@@ -1091,11 +1105,11 @@ class PolicyBasedResourceAllocation(container3.Container):
         self.connectiontable.add(conn)
         # Log
         via_text = '(via {})'.format(fqdn_query) if fqdn_query != fqdn_alias else ''
-        self._logger.info('Allocated IP address from Circular Pool: {} @ {} for {:.3f} msec {}'.format(fqdn_alias, allocated_ipv4, conn.timeout*1000, via_text))
-        self._logger.info('New Circular Pool connection: {}'.format(conn))
+        self._logger.debug('Allocated IP address from Circular Pool: {} @ {} for {:.3f} msec {}'.format(fqdn_alias, allocated_ipv4, conn.timeout*1000, via_text))
+        self._logger.info('Created Circular Pool connection: {}'.format(conn))
 
         # Synchronize connection with SYNPROXY module
-        ## TODO: Implement retrieval of TCP options policy from host
+        ## TODO: Implement retrieval of TCP options policy from host?
         if service_data['protocol'] in [0, 6]:
             tcpmss, tcpsack, tcpwscale = 1460, 1, 7
             yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)

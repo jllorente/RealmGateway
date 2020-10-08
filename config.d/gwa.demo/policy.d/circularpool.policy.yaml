@@ -1,9 +1,17 @@
 CIRCULARPOOL:
     max: 1000
     DNS_GROUP_POLICY:
-        - {'initial_reputation': 1.0, 'sla': true, 'nodes': ['100.64.0.1', '100.64.1.1', '100.64.2.1']}
-        - {'initial_reputation': 1.0, 'sla': true, 'nodes': ['100.64.248.0', '100.64.248.1']}
-        - {'initial_reputation': 0.0, 'sla': false, 'nodes': ['100.64.255.0', '100.64.255.1']}
+        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.0.1', '100.64.1.1', '100.64.2.1']}
+        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.248.0', '100.64.248.1', '100.64.248.2']}
+        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.249.0', '100.64.249.1', '100.64.249.2']}
+        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.250.0', '100.64.250.1', '100.64.250.2']}
+        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.251.0', '100.64.251.1', '100.64.251.2']}
+        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.252.0', '100.64.252.1', '100.64.252.2']}
+        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.253.0', '100.64.253.1', '100.64.253.2']}
+        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.254.0', '100.64.254.1', '100.64.254.2']}
+        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.255.0', '100.64.255.1', '100.64.255.2']}
+        # public host used for development with policy metadata
+        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.0.100'], 'metadata':{'tcp': false, 'cname': true, 'tcpcname': false, 'cname_prob': 3}}
     CONTROL_VARIABLES:
         SYSTEM_LOAD:
             - {'threshold_min': 99, 'threshold_max': 100, 'fqdn_new': 1.00, 'sfqdn_new': 0.85, 'sfqdn_reuse': 0.75, 'math': 'min'}
@@ -12,6 +20,6 @@ CIRCULARPOOL:
             - {'threshold_min':  0, 'threshold_max': 33,  'fqdn_new': 0.20, 'sfqdn_new': 0.15, 'sfqdn_reuse': 0.05, 'math': 'max'}
             - {'threshold_min':  0, 'threshold_max': 100, 'fqdn_new': 0.00, 'sfqdn_new': 0.00, 'sfqdn_reuse': 0.00, 'math': 'max'}
         PBRA_DNS_POLICY_TCPCNAME:  false
-        PBRA_DNS_POLICY_TCP:       true
-        PBRA_DNS_POLICY_CNAME:     true
+        PBRA_DNS_POLICY_TCP:       false
+        PBRA_DNS_POLICY_CNAME:     false
         PBRA_DNS_LOG_UNTRUSTED:    false

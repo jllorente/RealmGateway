@@ -608,22 +608,23 @@ class PacketCallbacks(object):
         self._logger = logging.getLogger('PacketCallbacks')
         utils3.set_attributes(self, **kwargs)
 
-    def _format_5tuple(self, packet_fields):
-        if packet_fields['proto'] == 6:
-            return '{}:{} {}:{} [{}] (TTL {}) flags/{:08b} seq/{} ack{}'.format(packet_fields['src'], packet_fields['sport'],
-                                                                                packet_fields['dst'], packet_fields['dport'],
-                                                                                packet_fields['proto'], packet_fields['ttl'],
-                                                                                packet_fields['tcp_flags'],packet_fields['tcp_seq'],
-                                                                                packet_fields['tcp_ack'])
-        elif packet_fields['proto'] == 132:
-            return '{}:{} {}:{} [{}] (TTL {}) tag/{:x}'.format(packet_fields['src'], packet_fields['sport'],
-                                                                packet_fields['dst'], packet_fields['dport'],
-                                                                packet_fields['proto'], packet_fields['ttl'],
-                                                                packet_fields['sctp_tag'])
+    def _format_5tuple(self, data):
+        if data['proto'] == 6:
+            ret = '{}:{} {}:{} [{}] (TTL {}) flags/{:08b} seq/{} ack/{}'.format(data['src'], data['sport'],
+                                                                                data['dst'], data['dport'],
+                                                                                data['proto'], data['ttl'],
+                                                                                data['tcp_flags'],data['tcp_seq'],
+                                                                                data['tcp_ack'])
+        elif data['proto'] == 132:
+            ret = '{}:{} {}:{} [{}] (TTL {}) tag/{:x}'.format(data['src'], data['sport'],
+                                                              data['dst'], data['dport'],
+                                                              data['proto'], data['ttl'],
+                                                              data['sctp_tag'])
         else:
-            return '{}:{} {}:{} [{}] (TTL {})'.format(packet_fields['src'], packet_fields['sport'],
-                                                      packet_fields['dst'], packet_fields['dport'],
-                                                      packet_fields['proto'], packet_fields['ttl'])
+            ret = '{}:{} {}:{} [{}] (TTL {})'.format(data['src'], data['sport'],
+                                                     data['dst'], data['dport'],
+                                                     data['proto'], data['ttl'])
+        return ret
 
     def packet_in_circularpool(self, packet):
         # Get IP data

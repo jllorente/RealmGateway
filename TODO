@@ -19,3 +19,14 @@ TODO:
  - where is suricata used?
  - ports in subscriber.d test.gwa do not match echoserver service!
  - remove msisdn from host IDs ?
+ - PBRA: initial reputation? what happens when you do nothing, how does the next metering interval evolve?
+        -> code changes introduced reputation=0 by default.
+ - DNS_GROUP with own PBRA policy, say we match SLA so we do UDP resolutions, no need to fallback.'
+ - How are we tracking ECS/ECID reputation of the server/host when a connection is accepted/expired?
+
+
+TEST KPIs:
+   - Compare the difference in serviceability when using base/ext1/ext2 with DNS noise
+      - Argue that SLA is required to trust EDNS0 that track the clients
+      - This requires some changes in code but will help us compare _trusted_ vs _untrusted_ DNS servers.
+
