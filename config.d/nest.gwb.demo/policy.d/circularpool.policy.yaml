@@ -5,4 +5,4 @@ CIRCULARPOOL:
         PBRA_DNS_POLICY_TCPCNAME:  false
         PBRA_DNS_POLICY_TCP:       false
         PBRA_DNS_POLICY_CNAME:     false
-        PBRA_DNS_LOG_UNTRUSTED:    false
+        PBRA_DNS_TRACK_RESOLVER:   false

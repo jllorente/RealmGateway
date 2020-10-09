@@ -54,7 +54,7 @@ from dns.rdataclass import *
 from dns.rdatatype import *
 
 # Reputation and system load
-PBRA_REPUTATION_MIDDLE = 0.45
+PBRA_REPUTATION_ZERO = 0.45
 
 # Keys for uStateDNSResolver
 KEY_DNSNODE_IPADDR  = 10
@@ -87,7 +87,7 @@ class uReputation(object):
     # These values define penalty/reward factor for higher loads of traffic
     # The factor is used as the exponent using the total number of events as the base
     ok_factor = 0
-    ok_factor = 0.15
+    nok_factor = 0.15
     neutral_factor = 0
     """
 
@@ -137,7 +137,7 @@ class uReputation(object):
 
     @property
     def _neutral_factor(self):
-        # Define a nok_factor that penalizes nok events
+        # Define a neutral_factor that accounts for neutral events
         return self.total ** self.neutral_factor
 
     @property
@@ -213,17 +213,21 @@ class uStateDNSHost(container3.ContainerNode):
         ## IP source / EDNS0 ClientSubnet / Extended Client Information
         self.ipaddr      = None
         self.ipaddr_mask = 32
-        ## EDNS0 Name Client Identifier -> Tuple of (tag_id, dns_group_id)
+        ## EDNS0 Name Client Identifier -> Tuple of (dns_group_id, tag_id)
         self.ncid        = (None, None)
         # Override attributes
         utils3.set_attributes(self, override=True, **kwargs)
-        ## Convert IPaddr/mask to network address
-        self._ipaddr = ipaddress.ip_network('{}/{}'.format(self.ipaddr, self.ipaddr_mask), strict=False)
-        # Overwrite ipaddr with network address
-        self.ipaddr = format(self._ipaddr.network_address)
+
+        # TODO: Logic to create/index host based on IP address or NCID
+        assert (self.ipaddr or self.ncid is not (None, None))
+
+        if self.ipaddr:
+            ## Convert IPaddr/mask to network address
+            self._ipaddr = ipaddress.ip_network('{}/{}'.format(self.ipaddr, self.ipaddr_mask), strict=False)
+            self.ipaddr = format(self._ipaddr.network_address)
 
         # Define reputation parameters
-        self.initial_reputation = PBRA_REPUTATION_MIDDLE
+        self.initial_reputation = PBRA_REPUTATION_ZERO
         self.period_n = 0
         self.period_ts = time.time()
         self.weight_previous = 0.25
@@ -237,8 +241,10 @@ class uStateDNSHost(container3.ContainerNode):
         # Return an iterable (key, isunique)
         keys = []
         # Typical keys of an advertised DNS host and data host
-        keys.append(((KEY_DNSHOST_IPADDR, self.ipaddr), True))
-        #keys.append(((KEY_DNSHOST_NCID, self.ncid), True))
+        if self.ipaddr:
+            keys.append(((KEY_DNSHOST_IPADDR, self.ipaddr), True))
+        if self.ncid:
+            keys.append(((KEY_DNSHOST_NCID, self.ncid), True))
         # Common key for indexing all reputation objects
         keys.append((KEY_DNS_REPUTATION, False))
         return keys
@@ -264,11 +270,11 @@ class uStateDNSHost(container3.ContainerNode):
         self.reputation_previous = self.reputation_current
 
         # Calculate absolute distance for ageing
-        distance = abs(_reputation - PBRA_REPUTATION_MIDDLE)
+        distance = abs(_reputation - PBRA_REPUTATION_ZERO)
         ## Age reputation towards the "middle point"
-        if _reputation < PBRA_REPUTATION_MIDDLE:
+        if _reputation < PBRA_REPUTATION_ZERO:
             _reputation += distance / 3
-        elif _reputation > PBRA_REPUTATION_MIDDLE:
+        elif _reputation > PBRA_REPUTATION_ZERO:
             _reputation -= distance / 3
 
         # Create new reputation object for current period
@@ -334,7 +340,7 @@ class uStateDNSGroup(container3.ContainerNode):
         self.weight_current = 0.75
 
         # Define initial reputation
-        self.initial_reputation = PBRA_REPUTATION_MIDDLE
+        self.initial_reputation = PBRA_REPUTATION_ZERO
 
         # Define flag to indicate SLA agreement for use of Extended Client Subnet / Extended Client Information
         self.sla = False
@@ -381,11 +387,11 @@ class uStateDNSGroup(container3.ContainerNode):
         self.reputation_previous = self.reputation_current
 
         # Calculate absolute distance for ageing
-        distance = abs(_reputation - PBRA_REPUTATION_MIDDLE)
+        distance = abs(_reputation - PBRA_REPUTATION_ZERO)
         ## Age reputation towards the "middle point"
-        if _reputation < PBRA_REPUTATION_MIDDLE:
+        if _reputation < PBRA_REPUTATION_ZERO:
             _reputation += distance / 3
-        elif _reputation > PBRA_REPUTATION_MIDDLE:
+        elif _reputation > PBRA_REPUTATION_ZERO:
             _reputation -= distance / 3
 
         # Create new reputation object for current period
@@ -530,7 +536,7 @@ class PolicyBasedResourceAllocation(container3.Container):
     * PBRA_DNS_POLICY_TCP establishes that incoming first queries must be carried via TCP
     * PBRA_DNS_POLICY_CNAME establishes that allocation is only allowed via temporary alias names of CNAME responses
         These two policies can be enabled or disabled independently
-    * PBRA_DNS_LOG_UNTRUSTED enables logging all untrusted UDP DNS query attempts
+    * PBRA_DNS_TRACK_RESOLVER enables logging all untrusted UDP DNS query attempts
 
     # Load levels in 100% (Use -1 value in threshold parameter to disable step)
     ## math choices 'min', 'max', 'avg'
@@ -542,7 +548,7 @@ class PolicyBasedResourceAllocation(container3.Container):
     PBRA_DNS_POLICY_TCPCNAME  = False
     PBRA_DNS_POLICY_TCP       = False
     PBRA_DNS_POLICY_CNAME     = False
-    PBRA_DNS_LOG_UNTRUSTED    = True
+    PBRA_DNS_TRACK_RESOLVER    = True
     # Define default system load policies
     SYSTEM_LOAD = [
                    #{'threshold_min': 80, 'threshold_max': 100, 'fqdn_new': 1.0, 'sfqdn_new': 0.8, 'sfqdn_reuse': 0.7, 'math': 'min'},
@@ -577,7 +583,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         self._logger.info('Control variable: {}={}'.format('PBRA_DNS_POLICY_TCPCNAME', self.PBRA_DNS_POLICY_TCPCNAME))
         self._logger.info('Control variable: {}={}'.format('PBRA_DNS_POLICY_TCP', self.PBRA_DNS_POLICY_TCP))
         self._logger.info('Control variable: {}={}'.format('PBRA_DNS_POLICY_CNAME', self.PBRA_DNS_POLICY_CNAME))
-        self._logger.info('Control variable: {}={}'.format('PBRA_DNS_LOG_UNTRUSTED', self.PBRA_DNS_LOG_UNTRUSTED))
+        self._logger.info('Control variable: {}={}'.format('PBRA_DNS_TRACK_RESOLVER', self.PBRA_DNS_TRACK_RESOLVER))
         self._logger.info('Control variable: {}=\n{}'.format('SYSTEM_LOAD', '\n'.join(format(_) for _ in self.SYSTEM_LOAD)))
 
 
@@ -745,7 +751,7 @@ class PolicyBasedResourceAllocation(container3.Container):
     def _dns_preprocess_rgw_wan_soa_event_logging(self, query, alias = False):
         """ Perform event logging based on trustworthiness of DNS query """
         # Log only when pre-conditions are met
-        if self.PBRA_DNS_LOG_UNTRUSTED is False:
+        if self.PBRA_DNS_TRACK_RESOLVER is False:
             pass
         elif alias and query.reputation_resolver is not None:
             # Register a trusted event
@@ -784,7 +790,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         prob_tcp_cname = 1
 
         # Load available reputation metadata in query object
-        resolver_policy = self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
+        resolver_policy = self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_TRACK_RESOLVER)
         # Create reputation information for requestor if resolver has SLA enabled
         _create_requestor = True if resolver_policy and resolver_policy.sla else False
         self._load_metadata_requestor(query, addr, create=_create_requestor)
@@ -847,7 +853,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             # Evaluate resolver metadata and create new if does not exist
             if query.reputation_resolver is None:
                 # Create reputation metadata in query object
-                self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_LOG_UNTRUSTED)
+                self._load_metadata_resolver(query, addr, create=self.PBRA_DNS_TRACK_RESOLVER)
 
             self._logger.debug('Create CNAME response / {}'.format(alias_service_data))
             # Return CNAME response
@@ -1005,8 +1011,8 @@ class PolicyBasedResourceAllocation(container3.Container):
         sfqdn = not fqdn
 
         # Obtain reputations from a query
-        r_resolver = query.reputation_resolver.reputation if query.reputation_resolver else PBRA_REPUTATION_MIDDLE
-        r_requestor = query.reputation_requestor.reputation if query.reputation_requestor else PBRA_REPUTATION_MIDDLE
+        r_resolver = query.reputation_resolver.reputation if query.reputation_resolver else PBRA_REPUTATION_ZERO
+        r_requestor = query.reputation_requestor.reputation if query.reputation_requestor else PBRA_REPUTATION_ZERO
         # Normalize reputation values
         r_resolver = self._normalize_reputation_value(r_resolver)
         r_requestor = self._normalize_reputation_value(r_requestor)

@@ -13,16 +13,15 @@ TODO:
  - Use overlay rootfs ?
  - replace SSL cert with *.demo ?
     -> Only useful if we plan to add a 3rd GW branch ? Then reconfigure all nginx sites accordingly...
- - change _policies_ to reflect new 100.64.248.0/21 test networks!
  - Add tmux for lxc environment
- - netns provisioning breaks system's resolv.conf
  - where is suricata used?
- - ports in subscriber.d test.gwa do not match echoserver service!
  - remove msisdn from host IDs ?
  - PBRA: initial reputation? what happens when you do nothing, how does the next metering interval evolve?
         -> code changes introduced reputation=0 by default.
- - DNS_GROUP with own PBRA policy, say we match SLA so we do UDP resolutions, no need to fallback.'
+ - DNS_GROUP with own PBRA policy, say we match SLA so we do UDP resolutions, no need to fallback.
  - How are we tracking ECS/ECID reputation of the server/host when a connection is accepted/expired?
+ - Implement ECS/NCID support when creating a connection -> decouple DNS resolutions vs DATA allocation
+ - Name Client Identifier - NCI (in paper) fix name of EDNS0 extensions in code!
 
 
 TEST KPIs:

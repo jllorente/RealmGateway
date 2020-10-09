@@ -11,7 +11,7 @@ CIRCULARPOOL:
         - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.254.0', '100.64.254.1', '100.64.254.2']}
         - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.255.0', '100.64.255.1', '100.64.255.2']}
         # public host used for development with policy metadata
-        - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.0.100'], 'metadata':{'tcp': false, 'cname': true, 'tcpcname': false, 'cname_prob': 3}}
+        - {'initial_reputation': 1.0, 'sla': true , 'nodes': ['100.64.0.100'], 'metadata':{'tcp': false, 'cname': true, 'tcpcname': false, 'cname_prob': 3}}
     CONTROL_VARIABLES:
         SYSTEM_LOAD:
             - {'threshold_min': 99, 'threshold_max': 100, 'fqdn_new': 1.00, 'sfqdn_new': 0.85, 'sfqdn_reuse': 0.75, 'math': 'min'}
@@ -22,4 +22,4 @@ CIRCULARPOOL:
         PBRA_DNS_POLICY_TCPCNAME:  false
         PBRA_DNS_POLICY_TCP:       false
         PBRA_DNS_POLICY_CNAME:     false
-        PBRA_DNS_LOG_UNTRUSTED:    false
+        PBRA_DNS_TRACK_RESOLVER:   false
