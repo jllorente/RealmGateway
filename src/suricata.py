@@ -70,8 +70,8 @@ class SuricataAlert(asyncio.DatagramProtocol):
          'tx_id': 0}
 
         # Example of matching conntrack 5-tuples
-        msg_wan_out = {"dest_ip": "8.8.4.4",      "dest_port": 53,    "src_ip": "100.64.1.131", "src_port": 43097,  "proto": "UDP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
-        msg_wan_in  = {"dest_ip": "100.64.1.131", "dest_port": 43097,  "src_ip": "8.8.4.4",      "src_port": 53,    "proto": "UDP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
+        msg_wan_out = {"dest_ip": "8.8.4.4",      "dest_port": 53,    "src_ip": "100.64.1.131", "src_port": 43097, "proto": "UDP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
+        msg_wan_in  = {"dest_ip": "100.64.1.131", "dest_port": 43097, "src_ip": "8.8.4.4",      "src_port": 53,    "proto": "UDP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
         msg_lan_out = {"dest_ip": "8.8.8.8",      "dest_port": 53,    "src_ip": "100.64.1.133", "src_port": 40749, "proto": "TCP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
         msg_lan_in  = {"dest_ip": "100.64.1.133", "dest_port": 40749, "src_ip": "8.8.8.8",      "src_port": 53,    "proto": "TCP", "alert":{"category": "cat_foo", "signature": "sig_foo"}}
         '''

@@ -18,10 +18,13 @@ TODO:
  - remove msisdn from host IDs ?
  - PBRA: initial reputation? what happens when you do nothing, how does the next metering interval evolve?
         -> code changes introduced reputation=0 by default.
- - DNS_GROUP with own PBRA policy, say we match SLA so we do UDP resolutions, no need to fallback.
  - How are we tracking ECS/ECID reputation of the server/host when a connection is accepted/expired?
  - Implement ECS/NCID support when creating a connection -> decouple DNS resolutions vs DATA allocation
  - Name Client Identifier - NCI (in paper) fix name of EDNS0 extensions in code!
+ - Fix txqueuelen with LXC interfaces. Add script to runatstart.d to list the interfaces, skip lo and set the len?
+      -> add post-ups in Vagrantfile for NICs in HOST machine
+ - Add to readme the onelines for time sleep operations and the python snippet?
+ - Change PBRA test suite to account for the delay introduced via packet mark! Explain how to pre-provision
 
 
 TEST KPIs:
