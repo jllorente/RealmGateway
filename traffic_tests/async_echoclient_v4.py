@@ -2,8 +2,8 @@
 
 '''
 NOTE: If run into the problem of too many files open, add to the file /etc/security/limits.conf
-* soft nofile 65535
-* hard nofile 65535
+* soft nofile 1048576
+* hard nofile 1048576
 
 Run as:   ./async_echoclient_v4.py --duration 3 --load 300 --distribution const --dnstimeout 1 1 1 --datatimeout 1 --fqdn localhost.demo:12345 --dnsaddr 127.0.0.1 --dnsport 54
 Requires: ./async_echoserver_v3.py -b 127.0.0.1:12345

@@ -214,12 +214,12 @@ class uStateDNSHost(container3.ContainerNode):
         self.ipaddr      = None
         self.ipaddr_mask = 32
         ## EDNS0 Name Client Identifier -> Tuple of (dns_group_id, tag_id)
-        self.ncid        = (None, None)
+        self.ncid        = None
         # Override attributes
         utils3.set_attributes(self, override=True, **kwargs)
 
         # TODO: Logic to create/index host based on IP address or NCID
-        assert (self.ipaddr or self.ncid is not (None, None))
+        assert (self.ipaddr or self.ncid)
 
         if self.ipaddr:
             ## Convert IPaddr/mask to network address

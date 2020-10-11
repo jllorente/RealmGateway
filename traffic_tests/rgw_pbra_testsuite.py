@@ -34,8 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 NOTE: If run into the problem of too many files open, add to the file /etc/security/limits.conf
-* soft nofile 65535
-* hard nofile 65535
+* soft nofile 1048576
+* hard nofile 1048576
 
 In this test suite we attempt to generate a deterministic amount of Internet traffic to model our algorithms deployed in Realm Gateway.
 
@@ -1383,7 +1383,7 @@ class MainTestClient(object):
                                                                       filename)
             lines.append(line)
             # Log via console
-            self.logger.warning('{0: <10}\tsuccess={1}\tfailure={2}\tdns_success={3}\tdns_failure={4}\tdns_rtx={5}'.format(name, success, failure, dns_success, dns_failure, (dns_1,dns_2,dns_3,dns_4,dns_5)))
+            self.logger.warning('{0: <10}\tsuccess={1}\tfailure={2}\tdns_success={3}\tdns_failure={4}\tdns_tx={5}'.format(name, success, failure, dns_success, dns_failure, (dns_1,dns_2,dns_3,dns_4,dns_5)))
         # Add extra line for file merge
         lines.append('')
         # Save results to file in CSV

@@ -264,10 +264,10 @@ sysctl -p
 - Add to /etc/security/limits.conf
 ```
 # Added on 17/01/2017
-*         hard    nofile      500000
-*         soft    nofile      500000
-root      hard    nofile      500000
-root      soft    nofile      500000
+*         hard    nofile      1048576
+*         soft    nofile      1048576
+root      hard    nofile      1048576
+root      soft    nofile      1048576
 ```
 
 - Check that /etc/ssh/sshd_config contains:

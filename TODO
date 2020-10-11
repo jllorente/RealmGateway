@@ -9,13 +9,12 @@
 
 
 TODO:
- - Make own box for LXC ?
- - Use overlay rootfs ?
+ - Improve documentation and readme in orchestration
+ - Add network diagrams and tmux scripts to start up
  - replace SSL cert with *.demo ?
     -> Only useful if we plan to add a 3rd GW branch ? Then reconfigure all nginx sites accordingly...
  - Add tmux for lxc environment
  - where is suricata used?
- - remove msisdn from host IDs ?
  - PBRA: initial reputation? what happens when you do nothing, how does the next metering interval evolve?
         -> code changes introduced reputation=0 by default.
  - How are we tracking ECS/ECID reputation of the server/host when a connection is accepted/expired?
@@ -24,8 +23,8 @@ TODO:
  - Fix txqueuelen with LXC interfaces. Add script to runatstart.d to list the interfaces, skip lo and set the len?
       -> add post-ups in Vagrantfile for NICs in HOST machine
  - Add to readme the onelines for time sleep operations and the python snippet?
- - Change PBRA test suite to account for the delay introduced via packet mark! Explain how to pre-provision
-
+ - Explain how to use mark_delay.sh
+ - Can we plot events from rgw.py to unterstand what's going on? It's very difficult to debug because of state information
 
 TEST KPIs:
    - Compare the difference in serviceability when using base/ext1/ext2 with DNS noise

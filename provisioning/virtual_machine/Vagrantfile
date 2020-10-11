@@ -176,7 +176,7 @@ net.netfilter.nf_conntrack_max=4194304
 EOF"
 
         ## Increase limits
-        node.vm.provision "shell", inline: "cat <<EOF >> /etc/security/limits.conf
+        node.vm.provision "shell", inline: "cat <<EOF > /etc/security/limits.d/rgw.conf
 # Prevent too many open files
 *       soft    nofile    1048576
 *       hard    nofile    1048576
