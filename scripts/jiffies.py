@@ -19,7 +19,7 @@ def sleep_loop(ms, n):
 
     t_duration = (t_stamps[-1] - t_stamps[0]) * 1000
     print(f'The process took {t_duration} ms')
-    print(f'Drift: {t_duration} / {t_sleeping} = {(t_duration / t_sleeping * 100)-100} %%')
+    print(f'Drift: {t_duration} / {t_sleeping} = {(t_duration / t_sleeping * 100)-100} %')
 
     t_splits = [(t_stamps[i] - t_stamps[i-1])*1000 for i in range(1,len(t_stamps))]
     print(f'Average sleep cycle: {statistics.mean(t_splits)} ms')

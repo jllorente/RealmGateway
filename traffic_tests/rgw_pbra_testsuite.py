@@ -1516,8 +1516,7 @@ if __name__ == '__main__':
 """
 File: example_traffic.yaml
 
-# YAML configuration file for Realm Gateway Traffic Test Suite v0.1
-## Modify and test via yaml.load(open('config_test.yaml', 'r'))
+# YAML configuration file for Realm Gateway Traffic Test Suite v0.2
 
 # Total duration of the test (sec)
 duration: 1
@@ -1535,6 +1534,7 @@ global_traffic:
         dns_timeouts: [1,5,5,5]
         data_timeouts: [1]
         # Traffic Control parameters / network delay (sec) via tc and netem
+        ## Random delay following uniform distribution [a,b]
         dns_delay: [0.250, 0.250]
         data_delay: [0.200, 0.200]
     dns:
@@ -1543,12 +1543,14 @@ global_traffic:
         data_raddr: [["example.com", 0, 0], ["google-public-dns-a.google.com", 0, 0]]
         dns_timeouts: [1,5,5,5]
         # Traffic Control parameters / network delay (sec) via tc and netem
+        ## Random delay following uniform distribution [a,b]
         dns_delay: [0.250, 0.250]
     data:
         data_laddr: [["0.0.0.0", 0, 6], ["0.0.0.0", 0, 17]]
         data_raddr: [["93.184.216.34", 80, 6], ["8.8.8.8", 53, 17]]
         data_timeouts: [1]
         # Traffic Control parameters / network delay (sec) via tc and netem
+        ## Random delay following uniform distribution [a,b]
         data_delay: [0.200, 0.200]
     dnsspoof:
         dns_laddr: [["1.1.1.1", 2000, 17], ["2.2.2.2", 2000, 17]]
@@ -1572,5 +1574,4 @@ traffic:
     ## Example of tests with specific values
     ## dnsdata: Specific duration and starting time
     - {type: "dnsdata",   load: 2, ts_start: 10, duration: 10}
-
 """
