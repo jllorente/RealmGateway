@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
 import logging
+import ipaddress
 import random
 import pprint
 from functools import partial
@@ -683,10 +684,10 @@ class PacketCallbacks(object):
             return
 
         # The connection belongs to an SLA marked DNS server
-        if conn.dns_bind and conn.dns_host.contains(src):
-            self._logger.info('Connection reserved found for remote host {}: {}'.format(src, conn.dns_host))
+        if conn.dns_bind and ipaddress.ip_address(src) in conn.dns_requestor:
+            self._logger.info('Connection reserved found for remote host {}: {}'.format(src, conn.dns_requestor))
         elif conn.dns_bind:
-            self._logger.info('Reject / Connection not reserved for remote host {}: {}'.format(src, conn.dns_host))
+            self._logger.info('Reject / Connection not reserved for remote host {}: {}'.format(src, conn.dns_requestor))
             self.network.ipt_nfpacket_reject(packet)
             self.pbra.pbra_data_track_circularpool(data, packet_fields)
             return

@@ -221,10 +221,9 @@ class uStateDNSHost(container3.ContainerNode):
         # TODO: Logic to create/index host based on IP address or NCID
         assert (self.ipaddr or self.ncid)
 
+        # Normalize
         if self.ipaddr:
-            ## Convert IPaddr/mask to network address
-            self._ipaddr = ipaddress.ip_network('{}/{}'.format(self.ipaddr, self.ipaddr_mask), strict=False)
-            self.ipaddr = format(self._ipaddr.network_address)
+            self.ipaddr = format(ipaddress.ip_network('{}/{}'.format(self.ipaddr, self.ipaddr_mask), strict=False).network_address)
 
         # Define reputation parameters
         self.initial_reputation = PBRA_REPUTATION_ZERO
@@ -248,13 +247,6 @@ class uStateDNSHost(container3.ContainerNode):
         # Common key for indexing all reputation objects
         keys.append((KEY_DNS_REPUTATION, False))
         return keys
-
-    def contains(self, ipaddr):
-        """ Return True if ipaddr exists in the defined network """
-        try:
-            return ipaddress.ip_address(ipaddr) in self._ipaddr
-        except:
-            return False
 
     def __repr__(self):
         return '[{}] ipaddr={}/{} ncid={} / reputation previous={:.3f} current={:.3f} weighted_avg={:.3f}'.format(self._name, self.ipaddr, self.ipaddr_mask, self.ncid, self.reputation_previous.reputation, self.reputation_current.reputation, self.reputation)
@@ -690,6 +682,10 @@ class PolicyBasedResourceAllocation(container3.Container):
         meta_ncid = None
         meta_flag = False
 
+        # Initialize values
+        query.reputation_requestor = None
+        query.requestor_cidr = None
+
         for opt in query.options:
             # My custom EDNS0 options implement this method (changes in the dnspython API)
             if hasattr(opt, 'to_text'):
@@ -703,48 +699,49 @@ class PolicyBasedResourceAllocation(container3.Container):
                 meta_mask   = opt.srclen
                 meta_flag   = True
             elif opt.otype == 0xff01:
-                # ExtendedClientInformation (preferred)
+                # EDNS0_EClientInfoOption - Extended Client Information (preferred over ECS)
                 meta_ipaddr = opt.address
                 meta_mask   = 32
                 meta_flag   = True
             elif opt.otype == 0xff02:
-                # ExtendedClientInformation
+                # EDNS0_EClientID - Extended Client Identification (byte stream tag) - rename to Name Client Identifier
                 meta_ncid   = opt.id_data
                 meta_flag   = True
 
         if meta_flag is False:
-            query.reputation_requestor = None
             return
 
-        ipaddr_lookupkey = format(ipaddress.ip_network('{}/{}'.format(meta_ipaddr, meta_mask), strict=False).network_address)
+        if meta_ipaddr and meta_mask:
+            query.requestor_cidr = ipaddress.ip_network('{}/{}'.format(meta_ipaddr, meta_mask), strict=False)
 
-        if self.has((KEY_DNSHOST_IPADDR, ipaddr_lookupkey)):
-            # Get existing object
-            dnshost_obj = self.get((KEY_DNSHOST_IPADDR, ipaddr_lookupkey))
-            self._logger.debug('Retrieved existing uStateDNSHost for requestor ipaddr={}/{}'.format(meta_ipaddr, meta_mask))
-
-        elif self.has((KEY_DNSHOST_IPADDR, ipaddr_lookupkey)) is False and create is True:
-            self._logger.info('Create uStateDNSHost for requestor ipaddr={}/{}'.format(meta_ipaddr, meta_mask))
-            dnshost_obj = uStateDNSHost(ipaddr = meta_ipaddr, ipaddr_mask = meta_mask)
-            self.add(dnshost_obj)
+        # Lookup key for requestor ID - non unique and tightly coupled with resolver group_id
+        ncid_lookupkey = (query.reputation_resolver.group_id, meta_ncid)
+        # Lookup key for requestor IP address - unique
+        ipaddr_lookupkey = format(query.requestor_cidr)
 
         '''
         # TODO: Bind ncid based on specific dns group id instead of resolver ipaddr (as to respect EDNS0 NCID cluster specification)
                 The value can be obtained from the query object // query.reputation_resolver.group_id
         NB: The code for uStateDNSHost has not been tested for ncid creation!
             What follows is an example of a potential implementation.
-
-        ncid_lookupkey = (meta_ncid, query.reputation_resolver.group_id) # tuple of ncid tag and resolver IP address
-        elif self.has((KEY_DNSHOST_NCID, ncid_lookupkey)):
-            # Get existing object
-            dnshost_obj = self.get((KEY_DNSHOST_NCID, ncid_lookupkey))
-            self._logger.debug('Retrieved existing uStateDNSHost for requestor ncid={}@{}'.format(meta_ncid, addr[0]))
-
-        elif self.has((KEY_DNSHOST_NCID, ncid_lookupkey)) is False and create is True:
-            self._logger.info('Create uStateDNSHost for requestor ncid={}@{}'.format(meta_ncid, addr[0]))
-            dnshost_obj = uStateDNSHost(ncid = ncid_lookupkey)
-            self.add(dnshost_obj)
         '''
+        # Prioritize Name Client Identifier for policy
+        if meta_ncid and self.has((KEY_DNSHOST_NCID, ncid_lookupkey)):
+            dnshost_obj = self.get((KEY_DNSHOST_NCID, ncid_lookupkey))
+            self._logger.info('Retrieved existing uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
+        elif meta_ncid and create:
+            self._logger.info('Create uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
+            dnshost_obj = uStateDNSHost(ncid=ncid_lookupkey)
+            self.add(dnshost_obj)
+        # Fallback to Client Subnet or Client Information
+        elif meta_ipaddr and self.has((KEY_DNSHOST_IPADDR, ipaddr_lookupkey)):
+            dnshost_obj = self.get((KEY_DNSHOST_IPADDR, ipaddr_lookupkey))
+            self._logger.info('Retrieved existing uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
+        elif meta_ipaddr and create:
+            self._logger.info('Create uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
+            dnshost_obj = uStateDNSHost(ipaddr=meta_ipaddr, ipaddr_mask=meta_mask)
+            self.add(dnshost_obj)
+
         # Add reputation to the DNS query
         query.reputation_requestor = dnshost_obj
 
@@ -1019,7 +1016,7 @@ class PolicyBasedResourceAllocation(container3.Container):
 
         # Obtain IP addressing information of DNS parties for improved logging
         dns_resolver_ipaddr = addr[0]
-        dns_host_ipaddr = query.reputation_requestor.ipaddr if query.reputation_requestor else None
+        dns_requestor_ipaddr = format(query.requestor_cidr)
 
         # Define allocation service for easy logging
         if fqdn:
@@ -1039,7 +1036,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             # Calculate values for policy math
             reputation = self._compute_policy_math_reputation(r_resolver, r_requestor, policy['math'])
             # Create log message
-            log_msg = 'load={:.2f}%% allocation={} reputation={:.2f} // reputation offered {:.2f} / {}({:.2f},{:.2f}) // {} @ {}'.format(sysload, service_alloc, policy[service_alloc], reputation, policy['math'], r_resolver, r_requestor, dns_host_ipaddr, dns_resolver_ipaddr)
+            log_msg = 'load={:.2f}%% allocation={} reputation={:.2f} // reputation offered {:.2f} / {}({:.2f},{:.2f}) // {} @ {}'.format(sysload, service_alloc, policy[service_alloc], reputation, policy['math'], r_resolver, r_requestor, dns_requestor_ipaddr, dns_resolver_ipaddr)
 
             # 1. Minimum reputation is required for allocating a new IP address for an FQDN service
             if ((fqdn and reputation >= policy['fqdn_new']) or
@@ -1067,14 +1064,10 @@ class PolicyBasedResourceAllocation(container3.Container):
         ap_cpool = self.pooltable.get('circularpool')
         pool_size, pool_allocated, pool_available = ap_cpool.get_stats()
 
-        # Get related DNS metadata
+        # Get related DNS metadata and bind connection to DNS requestor host
         dns_resolver = addr[0]
-        dns_host = query.reputation_requestor
         dns_bind = False
-        # Create DNS bound connection if all parameters are available
-        if query.reputation_resolver is None or dns_host is None:
-            dns_bind = False
-        elif query.reputation_resolver.sla and dns_host.ipaddr:
+        if query.reputation_resolver and query.reputation_resolver.sla and query.requestor_cidr:
             dns_bind = True
 
         # Get list of reusable addresses
@@ -1089,8 +1082,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             allocated_ipv4 = ap_cpool.allocate()
             self._logger.debug('Allocated address from CircularPool: {} / allocated={} available={}'.format(allocated_ipv4, ap_cpool.get_allocated(), ap_cpool.get_available()))
         else:
-            _dns_host_ipaddr = dns_host.ipaddr if dns_host else None
-            self._logger.warning('Failed to allocate a new address from CircularPool: {} for {} @ {}'.format(fqdn_alias, _dns_host_ipaddr, dns_resolver))
+            self._logger.warning('Failed to allocate a new address from CircularPool: {} for {} @ {}'.format(fqdn_alias, query.requestor_cidr, dns_resolver))
             return None
 
         # Continue to creating the connection
@@ -1105,7 +1097,7 @@ class PolicyBasedResourceAllocation(container3.Container):
                       'fqdn': fqdn_alias,
                       'host_fqdn': host_obj.fqdn,
                       'dns_resolver': dns_resolver,
-                      'dns_host': dns_host,
+                      'dns_requestor': query.requestor_cidr,
                       'dns_bind': dns_bind,
                       'loose_packet': service_data.setdefault('loose_packet', 0),
                       #'autobind': service_data.setdefault('autobind', True),

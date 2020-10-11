@@ -102,8 +102,8 @@ class ConnectionLegacy(container3.ContainerNode):
         @type fqdn: String
         @param dns_resolver: IPv4 address of the DNS server.
         @type dns_resolver: String
-        @param dns_host: IPv4 address of the DNS client.
-        @type dns_host: String
+        @param dns_requestor: CIDR network of the DNS client.
+        @type dns_requestor: ipaddress.ip_network
         @param timeout: Time to live (sec).
         @type timeout: Integer or float
         """
@@ -117,7 +117,7 @@ class ConnectionLegacy(container3.ContainerNode):
         # Set default values of unset attributes
         attrlist_zero = ['private_ip', 'private_port', 'outbound_ip', 'outbound_port',
                          'remote_ip', 'remote_port', 'protocol', 'loose_packet']
-        attrlist_none = ['fqdn', 'dns_resolver', 'dns_host', 'host_fqdn', 'timeout']
+        attrlist_none = ['fqdn', 'dns_resolver', 'dns_requestor', 'host_fqdn', 'timeout']
         utils3.set_default_attributes(self, attrlist_zero, 0)
         utils3.set_default_attributes(self, attrlist_none, None)
         # Set default timeout if not overriden
@@ -215,7 +215,7 @@ class ConnectionLegacy(container3.ContainerNode):
             ret += ' | FQDN {}'.format(self.fqdn)
 
         if self.dns_resolver:
-            ret += ' | DNS {} <- {}'.format(self.dns_resolver, self.dns_host)
+            ret += ' | DNS {} @ {}'.format(self.dns_requestor, self.dns_resolver)
 
         if self.loose_packet:
             ret += ' / bucket={}'.format(self.loose_packet)

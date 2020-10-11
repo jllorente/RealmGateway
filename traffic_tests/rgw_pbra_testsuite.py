@@ -427,8 +427,9 @@ def _make_query(fqdn, rdtype, rdclass, socktype='udp', client_addr=None, ecs_src
                 elif socktype in ['udp', 17]:
                     protocol = 17
                 options.append(_EDNS0_EClientInfoOption_(client_addr, protocol=protocol, query_id=0))
-            elif opt == 'ecid':
+            elif opt == 'ncid':
                 # Use IP address as Extended Client ID / it could be a hash or any binary data
+                # TODO: rename classes
                 options.append(_EDNS0_EClientID_(client_addr.encode()))
             else:
                 print('EDNS option not recognized! <{}>'.format(opt))
@@ -1514,7 +1515,7 @@ if __name__ == '__main__':
 
 
 """
-File: example_traffic.yaml
+File: example.yaml
 
 # YAML configuration file for Realm Gateway Traffic Test Suite v0.2
 
@@ -1526,52 +1527,110 @@ backoff: 3
 
 # Global definitions for traffic tests, used if no test specific parameter is defined
 global_traffic:
-    dnsdata:
-        dns_laddr: [["0.0.0.0", 0, 6], ["0.0.0.0", 0, 17]]
-        dns_raddr: [["8.8.8.8", 53, 17], ["8.8.8.8", 53, 6], ["8.8.4.4", 53, 17], ["8.8.4.4", 53, 6]]
-        data_laddr: [["0.0.0.0", 0, 6], ["0.0.0.0", 0, 17]]
-        data_raddr: [["example.com", 80, 6], ["google-public-dns-a.google.com", 53, 17]]
-        dns_timeouts: [1,5,5,5]
-        data_timeouts: [1]
-        # Traffic Control parameters / network delay (sec) via tc and netem
-        ## Random delay following uniform distribution [a,b]
-        dns_delay: [0.250, 0.250]
-        data_delay: [0.200, 0.200]
-    dns:
-        dns_laddr: [["0.0.0.0", 0, 6], ["0.0.0.0", 0, 17]]
-        dns_raddr: [["8.8.8.8", 53, 17], ["8.8.8.8", 53, 6], ["8.8.4.4", 53, 17], ["8.8.4.4", 53, 6]]
-        data_raddr: [["example.com", 0, 0], ["google-public-dns-a.google.com", 0, 0]]
-        dns_timeouts: [1,5,5,5]
-        # Traffic Control parameters / network delay (sec) via tc and netem
-        ## Random delay following uniform distribution [a,b]
-        dns_delay: [0.250, 0.250]
-    data:
-        data_laddr: [["0.0.0.0", 0, 6], ["0.0.0.0", 0, 17]]
-        data_raddr: [["93.184.216.34", 80, 6], ["8.8.8.8", 53, 17]]
-        data_timeouts: [1]
-        # Traffic Control parameters / network delay (sec) via tc and netem
-        ## Random delay following uniform distribution [a,b]
-        data_delay: [0.200, 0.200]
-    dnsspoof:
-        dns_laddr: [["1.1.1.1", 2000, 17], ["2.2.2.2", 2000, 17]]
-        dns_raddr: [["8.8.8.8", 53, 17], ["8.8.4.4", 53, 17], ["195.148.125.201", 53, 17], ["100.64.1.130", 53, 17]]
-        data_raddr: [["dnsspoof.example.com", 0, 0], ["dnsspoof.google.es", 0, 0]]
-        interface: "wan0"
-    dataspoof:
-        data_laddr: [["1.1.1.1", 3000, 17], ["1.1.1.1", 0, 6]]
-        data_raddr: [["8.8.8.8", 0, 17], ["8.8.8.8", 0, 6], ["195.148.125.201", 0, 17], ["195.148.125.201", 0, 6], ["100.64.1.130", 0, 17], ["100.64.1.130", 0, 6]]
-        interface: "wan0"
+  dnsdata:
+    dns_laddr:
+      - ["0.0.0.0", 0, 6]
+      - ["0.0.0.0", 0, 17]
+    dns_raddr:
+      - ["8.8.8.8", 53, 17]
+      - ["8.8.8.8", 53, 6]
+      - ["8.8.4.4", 53, 17]
+      - ["8.8.4.4", 53, 6]
+    data_laddr:
+      - ["0.0.0.0", 0, 6]
+      - ["0.0.0.0", 0, 17]
+    data_raddr:
+      - ["example.com", 80, 6]
+      - ["google-public-dns-a.google.com", 53, 17]
+    dns_timeouts:
+      - 1
+      - 5
+      - 5
+      - 5
+    data_timeouts:
+      - 1
+    # Traffic Control parameters / network delay (sec) via tc and netem
+    dns_delay:
+      - 0.050
+      - 0.100
+    data_delay:
+      - 0.200
+      - 0.200
+  dns:
+    dns_laddr:
+      - ["0.0.0.0", 0, 6]
+      - ["0.0.0.0", 0, 17]
+    dns_raddr:
+      - ["8.8.8.8", 53, 17]
+      - ["8.8.8.8", 53, 6]
+      - ["8.8.4.4", 53, 17]
+      - ["8.8.4.4", 53, 6]
+    data_laddr:
+      - ["0.0.0.0", 0, 0]
+    data_raddr:
+      - ["example.com", 0, 0]
+      - ["google-public-dns-a.google.com", 0, 0]
+    dns_timeouts:
+      - 1
+      - 5
+      - 5
+      - 5
+    # Traffic Control parameters / network delay (sec) via tc and netem
+    dns_delay:
+      - 0.050
+      - 0.100
+  data:
+    data_laddr:
+      - ["0.0.0.0", 0, 6]
+      - ["0.0.0.0", 0, 17]
+    data_raddr:
+      - ["93.184.216.34", 80, 6]
+      - ["8.8.8.8", 53, 17]
+    data_timeouts:
+      - 1
+    # Traffic Control parameters / network delay (sec) via tc and netem
+    data_delay:
+      - 0.200
+      - 0.200
+  dnsspoof:
+    dns_laddr:
+      - ["1.1.1.1", 2000, 17]
+      - ["2.2.2.2", 2000, 17]
+    dns_raddr:
+      - ["8.8.8.8", 53, 17]
+      - ["8.8.4.4", 53, 17]
+      - ["195.148.125.201", 53, 17]
+      - ["100.64.1.130", 53, 17]
+    data_laddr:
+      - ["0.0.0.0", 0, 0]
+    data_raddr:
+      - ["dnsspoof.example.com", 0, 0]
+      - ["dnsspoof.google.es", 0, 0]
+    interface: "wan0"
+  dataspoof:
+    data_laddr:
+      - ["1.1.1.1", 3000, 17]
+      - ["1.1.1.1", 0, 6]
+    data_raddr:
+      - ["8.8.8.8", 0, 17]
+      - ["8.8.8.8", 0, 6]
+      - ["195.148.125.201", 0, 17]
+      - ["195.148.125.201", 0, 6]
+      - ["100.64.1.130", 0, 17]
+      - ["100.64.1.130", 0, 6]
+    interface: "eth0"
 
 # This models all the test traffic
 traffic:
-    # Example of tests with global_traffic parameters
-    - {type: "dnsdata",   load: 2}
-    - {type: "dns",       load: 2, distribution: "exp", metadata: {edns_options: ["ecs"], edns_ecs_srclen: 32}}}
-    - {type: "data",      load: 2, distribution: "uni"}
-    - {type: "dataspoof", load: 2, interface: "ens18"}
-    - {type: "dnsspoof",  load: 2, interface: "ens18"}
+  # Example of tests with global_traffic parameters
+  - {type: "dnsdata",   load: 2}
+  - {type: "dns",       load: 2, distribution: "exp", metadata: {edns_options: ["ecs"], edns_ecs_srclen: 32}}
+  - {type: "data",      load: 2, distribution: "uni"}
+  - {type: "dataspoof", load: 2, interface: "wan0"}
+  - {type: "dnsspoof",  load: 2, interface: "wan0"}
 
-    ## Example of tests with specific values
-    ## dnsdata: Specific duration and starting time
-    - {type: "dnsdata",   load: 2, ts_start: 10, duration: 10}
+  ## Example of tests with specific values
+  ## dnsdata: Specific duration and starting time
+  - {type: "dnsdata",   load: 2, ts_start: 10, duration: 10}
+
 """
