@@ -1,0 +1,45 @@
+# YAML configuration file for Realm Gateway Traffic Test Suite v0.2
+#
+# NOTES:
+#   100% SFQDN traffic with UDP DNS and TCP data with uniform inter arrival times
+#   This test should produce 100% success rates for a Circular Pool of 3 addresses without any retransmissions
+
+# Total duration of the test (sec)
+duration: 1
+
+# Backoff time before scheduling tests (sec)
+backoff: 1
+
+# Global definitions for traffic tests, used if no test specific parameter is defined
+global_traffic:
+  dnsdata:
+    dns_laddr:
+      - ["100.64.248.0", 0, 17]
+    dns_raddr:
+      - ["100.64.1.130", 53, 17]
+    data_laddr:
+      - ["100.64.252.1", 0, 6]
+    data_raddr:
+      - ["tcp2000.test200.gwa.demo", 2000, 6]
+    dns_timeouts:
+      - 1
+      - 1
+      - 1
+      - 1
+    dns_delay:
+      - 0.0
+      - 0.0
+    data_timeouts:
+      - 1
+    data_delay:
+      - 0.0
+      - 0.0
+    data_backoff:
+      - 0.0
+      - 0.0
+
+
+# This models all the test traffic
+traffic:
+  # Example of tests with global_traffic parameters
+  - {type: "dnsdata",   load: 2, distribution: "uni", metadata: {edns_options: ["ecs", "ncid"], edns_ecs_srclen: 32}}
