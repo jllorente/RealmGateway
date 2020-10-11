@@ -21,5 +21,5 @@ CIRCULARPOOL:
             - {'threshold_min':  0, 'threshold_max': 100, 'fqdn_new': 0.00, 'sfqdn_new': 0.00, 'sfqdn_reuse': 0.00, 'math': 'max'}
         PBRA_DNS_POLICY_TCPCNAME:  false
         PBRA_DNS_POLICY_TCP:       false
-        PBRA_DNS_POLICY_CNAME:     false
-        PBRA_DNS_TRACK_RESOLVER:   false
+        PBRA_DNS_POLICY_CNAME:     true
+        PBRA_DNS_TRACK_RESOLVER:   true

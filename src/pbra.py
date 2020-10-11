@@ -57,8 +57,9 @@ from dns.rdatatype import *
 PBRA_REPUTATION_ZERO = 0.45
 
 # Keys for uStateDNSResolver
-KEY_DNSNODE_IPADDR  = 10
-KEY_DNSHOST_NCID    = 11
+KEY_DNSNODE_IPADDR     = 10
+KEY_DNSHOST_NCID       = 11
+KEY_DNSHOST_NCID_SCOPE = 12
 
 # Keys for uStateDNSGroup
 KEY_DNSGROUP        = 20
@@ -244,6 +245,8 @@ class uStateDNSHost(container3.ContainerNode):
             keys.append(((KEY_DNSHOST_IPADDR, self.ipaddr), True))
         if self.ncid:
             keys.append(((KEY_DNSHOST_NCID, self.ncid), True))
+            # Index by DNS server group_id
+            keys.append(((KEY_DNSHOST_NCID_SCOPE, self.ncid[0]), False))
         # Common key for indexing all reputation objects
         keys.append((KEY_DNS_REPUTATION, False))
         return keys
@@ -686,6 +689,10 @@ class PolicyBasedResourceAllocation(container3.Container):
         query.reputation_requestor = None
         query.requestor_cidr = None
 
+        # Pre-requirements
+        if query.reputation_resolver is None:
+            return
+
         for opt in query.options:
             # My custom EDNS0 options implement this method (changes in the dnspython API)
             if hasattr(opt, 'to_text'):
@@ -705,7 +712,7 @@ class PolicyBasedResourceAllocation(container3.Container):
                 meta_flag   = True
             elif opt.otype == 0xff02:
                 # EDNS0_EClientID - Extended Client Identification (byte stream tag) - rename to Name Client Identifier
-                meta_ncid   = opt.id_data
+                meta_ncid   = opt.id_data.decode()
                 meta_flag   = True
 
         if meta_flag is False:
@@ -728,17 +735,17 @@ class PolicyBasedResourceAllocation(container3.Container):
         # Prioritize Name Client Identifier for policy
         if meta_ncid and self.has((KEY_DNSHOST_NCID, ncid_lookupkey)):
             dnshost_obj = self.get((KEY_DNSHOST_NCID, ncid_lookupkey))
-            self._logger.info('Retrieved existing uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
+            self._logger.debug('Retrieved existing uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
         elif meta_ncid and create:
-            self._logger.info('Create uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
+            self._logger.debug('Create uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
             dnshost_obj = uStateDNSHost(ncid=ncid_lookupkey)
             self.add(dnshost_obj)
         # Fallback to Client Subnet or Client Information
         elif meta_ipaddr and self.has((KEY_DNSHOST_IPADDR, ipaddr_lookupkey)):
             dnshost_obj = self.get((KEY_DNSHOST_IPADDR, ipaddr_lookupkey))
-            self._logger.info('Retrieved existing uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
+            self._logger.debug('Retrieved existing uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
         elif meta_ipaddr and create:
-            self._logger.info('Create uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
+            self._logger.debug('Create uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
             dnshost_obj = uStateDNSHost(ipaddr=meta_ipaddr, ipaddr_mask=meta_mask)
             self.add(dnshost_obj)
 
@@ -873,9 +880,13 @@ class PolicyBasedResourceAllocation(container3.Container):
         self.remove(group2)
         # Update coalesced group keys with new nodes
         self.updatekeys(group1)
-        # TODO: Implement update of DNSHosts identified by NCID in DNSGroup
-        ## > This requires DNSHost created with NCID to be linked to DNSGroup id
-
+        # Update DNS group_id of uStateDNSHost identified by NCID
+        hosts = self.lookup((KEY_DNSHOST_NCID_SCOPE, group2.group_id))
+        # HACK: container3 is initialized with set()
+        for host in list(hosts):
+            self._logger.info('Updating uStateDNSHost {}'.format(host))
+            host.ncid = (group1.group_id, host.ncid[1])
+            self.updatekeys(host)
 
     @asyncio.coroutine
     def pbra_dns_process_rgw_wan_soa(self, query, addr, host_obj, service_data, host_ipv4):
