@@ -149,13 +149,13 @@ def generate_ipt_dns5(n):
 
 def generate_ipt_dns6(n):
     ''' Generate type 6 DNS iptables rule for matching '''
-    rule = 'iptables -t filter -A FORWARD -p udp --dport 53  -m string --algo bm --hex-string "|ff020004deadbeef|" --from 40 -m comment --comment "EDNS0_EClientID - deadbeef"'
+    rule = 'iptables -t filter -A FORWARD -p udp --dport 53  -m string --algo bm --hex-string "|ff020004deadbeef|" --from 40 -m comment --comment "NameClientIdentifierOption - deadbeef"'
     rules = [rule for i in range(n)]
     return rules
 
 def generate_ipt_dns7(n):
     ''' Generate type 7 DNS iptables rule for matching '''
-    rule = 'iptables -t filter -A FORWARD -p udp --dport 53  -m string --algo bm --hex-string "|ff01000a0001c61200640011|" --from 40 -m comment --comment "EDNS0_EClientInfoOption - 198.18.0.100 / UDP"'
+    rule = 'iptables -t filter -A FORWARD -p udp --dport 53  -m string --algo bm --hex-string "|ff01000a0001c61200640011|" --from 40 -m comment --comment "ExtendedClientInformationOption - 198.18.0.100 / UDP"'
     rules = [rule for i in range(n)]
     return rules
 

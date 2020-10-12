@@ -526,8 +526,8 @@ class DNSCallbacks(object):
 
         # Initiate SRV resolution towards CarrierGrade host
         ## Add EDNS0 ECS option to query
-        edns0_ecs = edns0.EDNS0_ECSOption(requestor_addr[0], 32, 0)
-        edns0_eci = edns0.EDNS0_EClientInfoOption(requestor_addr[0], 17, requestor_addr[1]) #UDP
+        edns0_ecs = edns0.ClientSubnetOption(requestor_addr[0], 32, 0)
+        edns0_eci = edns0.ExtendedClientInformationOption(requestor_addr[0], 17, requestor_addr[1]) #UDP
 
         # Create resolution loop
         _ipv4 = None

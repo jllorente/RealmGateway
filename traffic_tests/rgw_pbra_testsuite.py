@@ -242,7 +242,7 @@ class AsyncSocketQueue(object):
 ####################################################################################################
 
 ECS = 8
-class _EDNS0_ECSOption_(dns.edns.Option):
+class _ClientSubnetOption_(dns.edns.Option):
     """EDNS Client Subnet (ECS, RFC7871)"""
 
     def __init__(self, address, srclen=None, scopelen=0):
@@ -254,7 +254,7 @@ class _EDNS0_ECSOption_(dns.edns.Option):
         must be 0 in queries, and should be set in responses.
         """
 
-        super(_EDNS0_ECSOption_, self).__init__(ECS)
+        super(_ClientSubnetOption_, self).__init__(ECS)
         af = dns.inet.af_for_address(address)
 
         if af == dns.inet.AF_INET6:
@@ -318,7 +318,7 @@ class _EDNS0_ECSOption_(dns.edns.Option):
         return -1
 
 ECI = 0xFF01
-class _EDNS0_EClientInfoOption_(dns.edns.Option):
+class _ExtendedClientInformationOption_(dns.edns.Option):
     """
     EDNS Client Information (own development)
         * Client Information (0xFF01) (Encoded lenght 80 0x50 for IPv4 and 176 0xb0 for IPv6)
@@ -329,7 +329,7 @@ class _EDNS0_EClientInfoOption_(dns.edns.Option):
     """
 
     def __init__(self, address, protocol=17, query_id=0):
-        super(_EDNS0_EClientInfoOption_, self).__init__(ECI)
+        super(_ExtendedClientInformationOption_, self).__init__(ECI)
         af = dns.inet.af_for_address(address)
 
         if af == dns.inet.AF_INET6:
@@ -377,7 +377,7 @@ class _EDNS0_EClientInfoOption_(dns.edns.Option):
         return -1
 
 ECID = 0xFF02
-class _EDNS0_EClientID_(dns.edns.Option):
+class _NameClientIdentifierOption_(dns.edns.Option):
     """
     EDNS Client Identification (own development)
         * Client ID (0xFF02)
@@ -385,7 +385,7 @@ class _EDNS0_EClientID_(dns.edns.Option):
     """
 
     def __init__(self, id_data):
-        super(_EDNS0_EClientID_, self).__init__(ECID)
+        super(_NameClientIdentifierOption_, self).__init__(ECID)
         self.id_data = id_data
 
     def to_text(self):
@@ -407,9 +407,9 @@ class _EDNS0_EClientID_(dns.edns.Option):
         return -1
 
 # Add extensions to dnspython dns.edns module
-dns.edns._type_to_class[ECS]   = _EDNS0_ECSOption_
-dns.edns._type_to_class[ECI]   = _EDNS0_EClientInfoOption_
-dns.edns._type_to_class[ECID]  = _EDNS0_EClientID_
+dns.edns._type_to_class[ECS]   = _ClientSubnetOption_
+dns.edns._type_to_class[ECI]   = _ExtendedClientInformationOption_
+dns.edns._type_to_class[ECID]  = _NameClientIdentifierOption_
 ####################################################################################################
 ####################################################################################################
 
@@ -419,18 +419,17 @@ def _make_query(fqdn, rdtype, rdclass, socktype='udp', client_addr=None, ecs_src
     if edns_options is not None:
         for opt in edns_options:
             if opt == 'ecs':
-                options.append(_EDNS0_ECSOption_(client_addr, srclen=ecs_srclen, scopelen=0))
+                options.append(_ClientSubnetOption_(client_addr, srclen=ecs_srclen, scopelen=0))
             elif opt == 'eci':
                 # Set socket type
                 if socktype in ['tcp', 6]:
                     protocol = 6
                 elif socktype in ['udp', 17]:
                     protocol = 17
-                options.append(_EDNS0_EClientInfoOption_(client_addr, protocol=protocol, query_id=0))
+                options.append(_ExtendedClientInformationOption_(client_addr, protocol=protocol, query_id=0))
             elif opt == 'ncid':
                 # Use IP address as Extended Client ID / it could be a hash or any binary data
-                # TODO: rename classes
-                options.append(_EDNS0_EClientID_(client_addr.encode()))
+                options.append(_NameClientIdentifierOption_(client_addr.encode()))
             else:
                 print('EDNS option not recognized! <{}>'.format(opt))
                 continue

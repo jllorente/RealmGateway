@@ -119,8 +119,6 @@ class Network(object):
         self.ipt_init()
         # Create SYNPROXY instance
         self.synproxy_create()
-
-        # TODO: Uncomment these lines when CES support is added
         # Create HTTP REST Client
         self.rest_api_init()
         # Create OpenvSwitch

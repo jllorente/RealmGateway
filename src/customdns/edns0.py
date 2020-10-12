@@ -53,10 +53,10 @@ EDNS0 extension encoding TLV like:
 '''
 
 ENSID = 3
-class EDNS0_ENSIDOption(dns.edns.Option):
+class NameServerIdentifierOption(dns.edns.Option):
     """DNS Name Server Identifier (NSID, RFC5001)"""
     def __init__(self, data):
-        super(EDNS0_ENSIDOption, self).__init__(ENSID)
+        super(NameServerIdentifierOption, self).__init__(ENSID)
         self.data = data
 
     def to_wire(self, file):
@@ -78,7 +78,7 @@ class EDNS0_ENSIDOption(dns.edns.Option):
         return -1
 
 ECS = 8
-class EDNS0_ECSOption(dns.edns.Option):
+class ClientSubnetOption(dns.edns.Option):
 # Currently copied from official Github repo until included in the next release
     """EDNS Client Subnet (ECS, RFC7871)"""
 
@@ -91,7 +91,7 @@ class EDNS0_ECSOption(dns.edns.Option):
         must be 0 in queries, and should be set in responses.
         """
 
-        super(EDNS0_ECSOption, self).__init__(ECS)
+        super(ClientSubnetOption, self).__init__(ECS)
         af = dns.inet.af_for_address(address)
 
         if af == dns.inet.AF_INET6:
@@ -155,7 +155,7 @@ class EDNS0_ECSOption(dns.edns.Option):
         return -1
 
 ECI = 0xFF01
-class EDNS0_EClientInfoOption(dns.edns.Option):
+class ExtendedClientInformationOption(dns.edns.Option):
     """
     EDNS Client Information (own development)
         * Client Information (0xFF01) (Encoded lenght 80 0x50 for IPv4 and 176 0xb0 for IPv6)
@@ -166,7 +166,7 @@ class EDNS0_EClientInfoOption(dns.edns.Option):
     """
 
     def __init__(self, address, protocol=17, query_id=0):
-        super(EDNS0_EClientInfoOption, self).__init__(ECI)
+        super(ExtendedClientInformationOption, self).__init__(ECI)
         af = dns.inet.af_for_address(address)
 
         if af == dns.inet.AF_INET6:
@@ -214,7 +214,7 @@ class EDNS0_EClientInfoOption(dns.edns.Option):
         return -1
 
 ECID = 0xFF02
-class EDNS0_EClientID(dns.edns.Option):
+class NameClientIdentifierOption(dns.edns.Option):
     """
     EDNS Client Identification (own development)
         * Client ID (0xFF02)
@@ -222,11 +222,11 @@ class EDNS0_EClientID(dns.edns.Option):
     """
 
     def __init__(self, id_data):
-        super(EDNS0_EClientID, self).__init__(ECID)
+        super(NameClientIdentifierOption, self).__init__(ECID)
         self.id_data = id_data
 
     def to_text(self):
-        return 'ECID id/{}'.format(self.id_data)
+        return 'NCID id/{}'.format(self.id_data)
 
     def to_wire(self, file):
         file.write(self.id_data)
@@ -245,7 +245,7 @@ class EDNS0_EClientID(dns.edns.Option):
 
 
 EDR = 0xFF03
-class EDNS0_EDomainRate(dns.edns.Option):
+class DomainRateLimitationOption(dns.edns.Option):
     """
     EDNS Rate Limitation (own development)
         -> Notes: We can match FQDN/subdomains exactly at the begining of the name record, after the fixed DNS header (12 bytes)
@@ -280,7 +280,7 @@ class EDNS0_EDomainRate(dns.edns.Option):
                         }
 
     def __init__(self, fqdn, rate, unit, ttl):
-        super(EDNS0_EDomainRate, self).__init__(EDR)
+        super(DomainRateLimitationOption, self).__init__(EDR)
         # Normalize domain name
         self.fqdn = dns.name.from_text(fqdn).to_text()
         self.rate = rate
@@ -292,7 +292,7 @@ class EDNS0_EDomainRate(dns.edns.Option):
 
     def to_wire(self, file):
         _name = dns.name.from_text(self.fqdn).to_wire()
-        _unit = EDNS0_EDomainRate._units_from_text[self.unit]
+        _unit = DomainRateLimitationOption._units_from_text[self.unit]
         file.write(_name)
         file.write(struct.pack('!IHI', self.rate, _unit, self.ttl))
 
@@ -302,7 +302,7 @@ class EDNS0_EDomainRate(dns.edns.Option):
         name, n = dns.name.from_wire(wire, cur)
         rate, unit, ttl = struct.unpack('!IHI', wire[cur+n:cur+olen])
         _name = name.to_text()
-        _unit = EDNS0_EDomainRate._units_from_int[unit]
+        _unit = DomainRateLimitationOption._units_from_int[unit]
         return cls(_name, rate, _unit, ttl)
 
     def _cmp(self, other):
@@ -311,20 +311,12 @@ class EDNS0_EDomainRate(dns.edns.Option):
         return -1
 
 # Add extensions to dnspython dns.edns module
-dns.edns._type_to_class[ENSID] = EDNS0_ENSIDOption
-dns.edns._type_to_class[ECS]   = EDNS0_ECSOption
-dns.edns._type_to_class[ECI]   = EDNS0_EClientInfoOption
-dns.edns._type_to_class[ECID]  = EDNS0_EClientID
-dns.edns._type_to_class[EDR]   = EDNS0_EDomainRate
-'''
-dns.edns._type_to_class = {
-    ENSID: EDNS0_ENSIDOption,
-    ECS:   EDNS0_ECSOption,
-    ECI:   EDNS0_EClientInfoOption,
-    ECID:  EDNS0_EClientID,
-    EDR:   EDNS0_EDomainRate
-}
-'''
+dns.edns._type_to_class[ENSID] = NameServerIdentifierOption
+dns.edns._type_to_class[ECS]   = ClientSubnetOption
+dns.edns._type_to_class[ECI]   = ExtendedClientInformationOption
+dns.edns._type_to_class[ECID]  = NameClientIdentifierOption
+dns.edns._type_to_class[EDR]   = DomainRateLimitationOption
+
 
 def fqdn_ipt_match(domain):
     # http://stackoverflow.com/questions/12638408/decorating-hex-function-to-pad-zeros
@@ -444,52 +436,52 @@ def send_recv_query(fqdn, rdtype, options, address):
 
 if __name__ == '__main__':
     # Build tests
-    print('EDNS0_ECSOption')
-    generic_edns_test([(EDNS0_ECSOption, ('192.168.0.100', 32, 0))])
+    print('ClientSubnetOption')
+    generic_edns_test([(ClientSubnetOption, ('192.168.0.100', 32, 0))])
 
-    print('EDNS0_EClientInfoOption')
-    generic_edns_test([(EDNS0_EClientInfoOption, ('192.168.0.100', 17, 47789))])
+    print('ExtendedClientInformationOption')
+    generic_edns_test([(ExtendedClientInformationOption, ('192.168.0.100', 17, 47789))])
 
-    print('EDNS0_EClientID')
-    generic_edns_test([(EDNS0_EClientID, (b'\xde\xad\xbe\xef',))])
+    print('NameClientIdentifierOption')
+    generic_edns_test([(NameClientIdentifierOption, (b'\xde\xad\xbe\xef',))])
 
-    print('EDNS0_EDomainRate')
-    generic_edns_test([(EDNS0_EDomainRate, ('foo.bar.',10,'sec',60))])
-    print('EDNS0_EDomainRate')
-    generic_edns_test([(EDNS0_EDomainRate, ('*foo.bar.',10,'sec',60))])
-    print('EDNS0_EDomainRate')
-    generic_edns_test([(EDNS0_EDomainRate, ('*.foo.bar.',10,'sec',60))])
+    print('DomainRateLimitationOption')
+    generic_edns_test([(DomainRateLimitationOption, ('foo.bar.',10,'sec',60))])
+    print('DomainRateLimitationOption')
+    generic_edns_test([(DomainRateLimitationOption, ('*foo.bar.',10,'sec',60))])
+    print('DomainRateLimitationOption')
+    generic_edns_test([(DomainRateLimitationOption, ('*.foo.bar.',10,'sec',60))])
 
-    print('EDNS0_ENSIDOption')
-    generic_edns_test([(EDNS0_ENSIDOption, ('SomeServerId'.encode(),))])
+    print('NameServerIdentifierOption')
+    generic_edns_test([(NameServerIdentifierOption, ('SomeServerId'.encode(),))])
 
     print('Mix of all options')
-    options_to_wire([(EDNS0_ECSOption, ('192.168.0.100', 32, 0)),
-                     (EDNS0_EClientInfoOption, ('192.168.0.100', 17, 47789)),
-                     (EDNS0_EClientID, (b'\xde\xad\xbe\xef',)),
-                     (EDNS0_EDomainRate, ('foo.bar.',10,'sec',60)),
-                     (EDNS0_EDomainRate, ('*foo.bar.',10,'sec',60)),
-                     (EDNS0_EDomainRate, ('*.foo.bar.',10,'sec',60)),
-                     (EDNS0_ENSIDOption, ('SomeServerId'.encode(),))])
+    options_to_wire([(ClientSubnetOption, ('192.168.0.100', 32, 0)),
+                     (ExtendedClientInformationOption, ('192.168.0.100', 17, 47789)),
+                     (NameClientIdentifierOption, (b'\xde\xad\xbe\xef',)),
+                     (DomainRateLimitationOption, ('foo.bar.',10,'sec',60)),
+                     (DomainRateLimitationOption, ('*foo.bar.',10,'sec',60)),
+                     (DomainRateLimitationOption, ('*.foo.bar.',10,'sec',60)),
+                     (NameServerIdentifierOption, ('SomeServerId'.encode(),))])
 
 
     # Query and extension propagation tests
-    print('Send/Recv EDNS0_ECSOption')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_ECSOption, ('192.168.0.100', 32, 0))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_EClientInfoOption')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_EClientInfoOption, ('192.168.0.100', 17, 47789))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_EClientID')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_EClientID, (b'\xde\xad\xbe\xef',))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_EDomainRate')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_EDomainRate, ('foo.bar.',10,'sec',60))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_EDomainRate')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_EDomainRate, ('*foo.bar.',10,'sec',60))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_EDomainRate')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_EDomainRate, ('*.foo.bar.',10,'sec',60))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_ENSIDOption')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_ENSIDOption, ('SomeServerId'.encode(),))], ('8.8.8.8',53))
-    print('Send/Recv EDNS0_ENSIDOption')
-    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(EDNS0_ENSIDOption, (''.encode(),))], ('8.8.8.8',53))
+    print('Send/Recv ClientSubnetOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(ClientSubnetOption, ('192.168.0.100', 32, 0))], ('8.8.8.8',53))
+    print('Send/Recv ExtendedClientInformationOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(ExtendedClientInformationOption, ('192.168.0.100', 17, 47789))], ('8.8.8.8',53))
+    print('Send/Recv NameClientIdentifierOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(NameClientIdentifierOption, (b'\xde\xad\xbe\xef',))], ('8.8.8.8',53))
+    print('Send/Recv DomainRateLimitationOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(DomainRateLimitationOption, ('foo.bar.',10,'sec',60))], ('8.8.8.8',53))
+    print('Send/Recv DomainRateLimitationOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(DomainRateLimitationOption, ('*foo.bar.',10,'sec',60))], ('8.8.8.8',53))
+    print('Send/Recv DomainRateLimitationOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(DomainRateLimitationOption, ('*.foo.bar.',10,'sec',60))], ('8.8.8.8',53))
+    print('Send/Recv NameServerIdentifierOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(NameServerIdentifierOption, ('SomeServerId'.encode(),))], ('8.8.8.8',53))
+    print('Send/Recv NameServerIdentifierOption')
+    send_recv_query(_random_string(10)+'.cloud.mobilesdn.org', 1, [(NameServerIdentifierOption, (''.encode(),))], ('8.8.8.8',53))
 
     # Build iptables string matches for the following: 'DOMAIN_ONLY', 'SUBDOMAIN_ONLY', 'DOMAIN_SUBDOMAIN', 'LABEL', 'CONTAINS'
     print('iptables match DOMAIN_ONLY:\n{}'.format(ipt_build_match_domain('example.com', mtype = 'DOMAIN_ONLY')))

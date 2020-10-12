@@ -42,4 +42,4 @@ global_traffic:
 # This models all the test traffic
 traffic:
   # Example of tests with global_traffic parameters
-  - {type: "dnsdata",   load: 2, distribution: "uni", metadata: {edns_options: ["ecs", "ncid"], edns_ecs_srclen: 32}}
+  - {type: "dnsdata",   load: 1, distribution: "uni", metadata: {edns_options: ["ecs", "eci", "ncid"], edns_ecs_srclen: 24}}

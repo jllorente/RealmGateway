@@ -212,19 +212,13 @@ class uStateDNSHost(container3.ContainerNode):
     def __init__(self, **kwargs):
         super().__init__('uStateDNSHost')
         ## IP source / EDNS0 ClientSubnet / Extended Client Information
-        self.ipaddr      = None
-        self.ipaddr_mask = 32
+        self.ipaddr = None
         ## EDNS0 Name Client Identifier -> Tuple of (dns_group_id, tag_id)
-        self.ncid        = None
+        self.ncid   = None
         # Override attributes
         utils3.set_attributes(self, override=True, **kwargs)
 
-        # TODO: Logic to create/index host based on IP address or NCID
         assert (self.ipaddr or self.ncid)
-
-        # Normalize
-        if self.ipaddr:
-            self.ipaddr = format(ipaddress.ip_network('{}/{}'.format(self.ipaddr, self.ipaddr_mask), strict=False).network_address)
 
         # Define reputation parameters
         self.initial_reputation = PBRA_REPUTATION_ZERO
@@ -252,7 +246,7 @@ class uStateDNSHost(container3.ContainerNode):
         return keys
 
     def __repr__(self):
-        return '[{}] ipaddr={}/{} ncid={} / reputation previous={:.3f} current={:.3f} weighted_avg={:.3f}'.format(self._name, self.ipaddr, self.ipaddr_mask, self.ncid, self.reputation_previous.reputation, self.reputation_current.reputation, self.reputation)
+        return '[{}] ipaddr={} ncid={} / reputation previous={:.3f} current={:.3f} weighted_avg={:.3f}'.format(self._name, self.ipaddr, self.ncid, self.reputation_previous.reputation, self.reputation_current.reputation, self.reputation)
 
     def transition_period(self):
         # Transition to next period
@@ -701,17 +695,17 @@ class PolicyBasedResourceAllocation(container3.Container):
                 self._logger.debug('Found EDNS0: Generic {}'.format(opt.otype))
 
             if opt.otype == 0x08 and meta_ipaddr is None:
-                # ClientSubnet
+                # Client Subnet
                 meta_ipaddr = opt.address
                 meta_mask   = opt.srclen
                 meta_flag   = True
             elif opt.otype == 0xff01:
-                # EDNS0_EClientInfoOption - Extended Client Information (preferred over ECS)
+                # Extended Client Information (preferred over ECS)
                 meta_ipaddr = opt.address
                 meta_mask   = 32
                 meta_flag   = True
             elif opt.otype == 0xff02:
-                # EDNS0_EClientID - Extended Client Identification (byte stream tag) - rename to Name Client Identifier
+                # Name Client Identifier as a byte stream tag
                 meta_ncid   = opt.id_data.decode()
                 meta_flag   = True
 
@@ -721,32 +715,30 @@ class PolicyBasedResourceAllocation(container3.Container):
         if meta_ipaddr and meta_mask:
             query.requestor_cidr = ipaddress.ip_network('{}/{}'.format(meta_ipaddr, meta_mask), strict=False)
 
+
         # Lookup key for requestor ID - non unique and tightly coupled with resolver group_id
         ncid_lookupkey = (query.reputation_resolver.group_id, meta_ncid)
         # Lookup key for requestor IP address - unique
         ipaddr_lookupkey = format(query.requestor_cidr)
 
-        '''
-        # TODO: Bind ncid based on specific dns group id instead of resolver ipaddr (as to respect EDNS0 NCID cluster specification)
-                The value can be obtained from the query object // query.reputation_resolver.group_id
-        NB: The code for uStateDNSHost has not been tested for ncid creation!
-            What follows is an example of a potential implementation.
-        '''
+        dnshost_ncid = self.lookup((KEY_DNSHOST_NCID, ncid_lookupkey))
+        dnshost_ipaddr = self.lookup((KEY_DNSHOST_IPADDR, ipaddr_lookupkey))
+
         # Prioritize Name Client Identifier for policy
-        if meta_ncid and self.has((KEY_DNSHOST_NCID, ncid_lookupkey)):
-            dnshost_obj = self.get((KEY_DNSHOST_NCID, ncid_lookupkey))
+        if dnshost_ncid and meta_ncid:
             self._logger.debug('Retrieved existing uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
-        elif meta_ncid and create:
+            dnshost_obj = dnshost_ncid
+        elif dnshost_ncid is None and meta_ncid and create:
             self._logger.debug('Create uStateDNSHost for requestor ncid={}'.format(ncid_lookupkey))
             dnshost_obj = uStateDNSHost(ncid=ncid_lookupkey)
             self.add(dnshost_obj)
         # Fallback to Client Subnet or Client Information
-        elif meta_ipaddr and self.has((KEY_DNSHOST_IPADDR, ipaddr_lookupkey)):
-            dnshost_obj = self.get((KEY_DNSHOST_IPADDR, ipaddr_lookupkey))
+        elif dnshost_ipaddr and meta_ipaddr:
             self._logger.debug('Retrieved existing uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
-        elif meta_ipaddr and create:
+            dnshost_obj = dnshost_ipaddr
+        elif dnshost_ipaddr is None and meta_ipaddr and create:
             self._logger.debug('Create uStateDNSHost for requestor ipaddr={}'.format(ipaddr_lookupkey))
-            dnshost_obj = uStateDNSHost(ipaddr=meta_ipaddr, ipaddr_mask=meta_mask)
+            dnshost_obj = uStateDNSHost(ipaddr=ipaddr_lookupkey)
             self.add(dnshost_obj)
 
         # Add reputation to the DNS query
