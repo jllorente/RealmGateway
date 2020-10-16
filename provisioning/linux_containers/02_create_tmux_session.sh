@@ -46,7 +46,7 @@ done
 echo ""
 
 # Create new session and configure first window for gwa.demo
-tmux new-session -d -s rgw_netns -n background
+tmux new-session -d -s rgw_lxc -n background
 
 ## Split window
 tmux split-window -h -p 50
@@ -54,11 +54,11 @@ tmux split-window -v -p 50
 
 ### Access panes and run commands
 tmux select-pane -t 0
-tmux send-keys 'nsbash gwa' Enter
+tmux send-keys 'lxc-attach gwa -- bash' Enter
 tmux select-pane -t 1
-tmux send-keys 'nsbash public' Enter
+tmux send-keys 'lxc-attach public -- bash' Enter
 tmux select-pane -t 2
-tmux send-keys 'nsbash testgwa' Enter
+tmux send-keys 'lxc-attach testgwa -- bash' Enter
 
 tmux select-pane -t 0
 tmux send-keys '/RealmGateway/config.d/gwa.demo/run.sh' Enter

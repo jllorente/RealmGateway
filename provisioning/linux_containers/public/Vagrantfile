@@ -39,6 +39,8 @@ Vagrant.configure(2) do |config|
             # Add _public_ test network(s) IP addresses to public node
             for ip in 100.64.{248..255}.{0..16}; do ip address add $ip/32 dev wan0; done
             systemctl restart vsftpd
+            # Configure delay buckets
+            /sbin/mark_delay --nic wan0 --start 1 --step 1 --end 250
         SHELL
 
         # Configure container networking

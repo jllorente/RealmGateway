@@ -14,16 +14,16 @@ The following instructions have been tested with Ubuntu 18 Bionic, Linux kernel 
 Compile and install the module as follow:
 
 ```
-cd /realmgateway/iptables_devel/kernel
+cd /RealmGateway/iptables_devel/kernel
 
 make all
-make -C /lib/modules/4.15.0-117-generic/build M=/realmgateway/iptables_devel/kernel modules
+make -C /lib/modules/4.15.0-117-generic/build M=/RealmGateway/iptables_devel/kernel modules
 make[1]: Entering directory '/usr/src/linux-headers-4.15.0-117-generic'
-  CC [M]  /realmgateway/iptables_devel/kernel/xt_MARKDNAT.o
+  CC [M]  /RealmGateway/iptables_devel/kernel/xt_MARKDNAT.o
   Building modules, stage 2.
   MODPOST 1 modules
-  CC      /realmgateway/iptables_devel/kernel/xt_MARKDNAT.mod.o
-  LD [M]  /realmgateway/iptables_devel/kernel/xt_MARKDNAT.ko
+  CC      /RealmGateway/iptables_devel/kernel/xt_MARKDNAT.mod.o
+  LD [M]  /RealmGateway/iptables_devel/kernel/xt_MARKDNAT.ko
 make[1]: Leaving directory '/usr/src/linux-headers-4.15.0-117-generic'
 
 sudo make install
@@ -75,7 +75,7 @@ cd /var/tmp/ && apt source iptables
 cd /var/tmp/iptables-1.6.1
 ./autogen.sh
 ./configure
-cp /realmgateway/iptables_devel/userspace/libxt_MARKDNAT.* /var/tmp/iptables-1.6.1/extensions
+cp /RealmGateway/iptables_devel/userspace/libxt_MARKDNAT.* /var/tmp/iptables-1.6.1/extensions
 make all -C /var/tmp/iptables-1.6.1/extensions
 sudo cp /var/tmp/iptables-1.6.1/extensions/libxt_MARKDNAT.so /usr/lib/x86_64-linux-gnu/xtables/libxt_MARKDNAT.so
 ```

@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
         node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
         node.vm.provision "file", source: "./gwa/rootfs", destination: "/var/tmp/rootfs"
         # This shared mount does not preserve permissions but it remains _up-to-date_ for running code
-        node.vm.synced_folder "/realmgateway", "/realmgateway"
+        node.vm.synced_folder "/RealmGateway", "/RealmGateway"
 
         # Install apt package dependencies
         node.vm.provision "shell", inline: <<-SHELL

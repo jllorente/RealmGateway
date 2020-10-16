@@ -2,7 +2,7 @@
 Description=RealmGateway service
 
 [Service]
-ExecStart=/realmgateway/src/rgw.py                                             \
+ExecStart=/RealmGateway/src/rgw.py                                             \
             --name             gwb.demo                                        \
             --dns-soa          gwb.demo. cname-gwb.demo.                       \
                                0.168.192.in-addr.arpa. 2.64.100.in-addr.arpa.  \
@@ -27,8 +27,8 @@ ExecStart=/realmgateway/src/rgw.py                                             \
             --ips-hosts        IPS_SUBSCRIBERS                                 \
             --ipt-markdnat                                                     \
             --ipt-flush                                                        \
-            --repository-subscriber-folder /realmgateway/config.d/gwb.demo/subscriber.d/ \
-            --repository-policy-folder     /realmgateway/config.d/gwb.demo/policy.d/     \
+            --repository-subscriber-folder /RealmGateway/config.d/gwb.demo/subscriber.d/ \
+            --repository-policy-folder     /RealmGateway/config.d/gwb.demo/policy.d/     \
             --repository-api-url  http://127.0.0.1:8082/                       \
             --network-api-url     http://127.0.0.1:8081/                       \
             --synproxy         10.0.0.15 12345
