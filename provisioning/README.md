@@ -48,7 +48,7 @@ Inside the SSH session of the VM use the following commands as root:
 
 ```
 # Access the location of the Vagrantfile
-cd /realmgateway/provisioning/linux_containers
+cd /RealmGateway/provisioning/linux_containers
 
 # Create the supporting networking infrastructure
 ./pre-up.sh
@@ -67,7 +67,7 @@ Inside the SSH session of the VM use the following commands as root:
 
 ```
 # Access the location of the Vagrantfile
-cd /realmgateway/provisioning/network_namespaces
+cd /RealmGateway/provisioning/network_namespaces
 
 # Create the supporting networking infrastructure
 ./01_setup_environment.sh

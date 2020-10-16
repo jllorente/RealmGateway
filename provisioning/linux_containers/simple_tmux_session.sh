@@ -52,27 +52,26 @@ tmux new-session -d -s rgw_lxc -n background
 tmux split-window -h -p 50
 tmux split-window -v -p 50
 
+sleep 1
+
 ### Access panes and run commands
 tmux select-pane -t 0
-tmux send-keys 'lxc-attach gwa -- bash' Enter
+tmux send-keys 'lxc-attach gwa' Enter
 tmux select-pane -t 1
-tmux send-keys 'lxc-attach public -- bash' Enter
+tmux send-keys 'lxc-attach public' Enter
 tmux select-pane -t 2
-tmux send-keys 'lxc-attach testgwa -- bash' Enter
+tmux send-keys 'lxc-attach testgwa' Enter
+
+sleep 1
 
 tmux select-pane -t 0
-tmux send-keys '/RealmGateway/config.d/gwa.demo/run.sh' Enter
-
-echo "Initializing RealmGateway gwa.demo "
-sleep 10
-
+tmux send-keys 'journalctl -f -u realmgateway.service' Enter
 tmux select-pane -t 1
-# Workaround the lack of recursive resolver
-tmux send-keys 'ping $(dig icmp.test.gwa.demo +short) -c 3' Enter
+tmux send-keys 'ping icmp.test.gwa.demo -c 3' Enter
 tmux select-pane -t 2
 tmux send-keys 'cd / && python3 -m http.server 8008' Enter
 tmux select-pane -t 1
-tmux send-keys 'curl http://$(dig test.gwa.demo +short):8008/etc/hostname' Enter
+tmux send-keys 'curl http://test.gwa.demo:8008/etc/hostname' Enter
 
 ### Select pane 3 // public
 tmux select-pane -t 1
