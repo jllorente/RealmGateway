@@ -25,8 +25,6 @@ Vagrant.configure(2) do |config|
             provider.customize ["modifyvm", :id, "--pae", "on", "--hwvirtex", "on"]
             provider.customize ["modifyvm", :id, "--nestedpaging", "on", "--nested-hw-virt", "on"]
             provider.customize ["modifyvm", :id, "--vtxvpid", "on", "--vtxux", "on"]
-            # Very experimental
-            provider.customize ["modifyvm", :id, "--vm-process-priority", "high"]
         end
 
         ### Libvirt
@@ -44,148 +42,17 @@ Vagrant.configure(2) do |config|
         # Configure shared folders
         node.vm.synced_folder ".", "/vagrant", disabled: true
         # The rsync mount preserves the file permissions needed when deploying LXC containers
-        node.vm.synced_folder "../../", "/realmgateway", type: "rsync", rsync__args: ["--verbose", "--archive", "-z", "--copy-links"]
+        node.vm.synced_folder "../../", "/home/vagrant/RealmGateway", type: "rsync", rsync__args: ["--verbose", "--archive", "-z", "--copy-links"]
 
-        # Install apt package dependencies
+        # Run installation scripts
         node.vm.provision "shell", inline: <<-SHELL
-            export DEBIAN_FRONTEND=noninteractive
-            apt install -y apt-transport-https && apt update
-            apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
-            apt install -y iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
-            apt install -y iptables ipset bridge-utils conntrack lxc python3-lxc python3-yaml openvswitch-switch openvswitch-vtep
-            apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
-            # Add DKMS support for compiled modules?
-            # apt install -y xtables-addons-common xtables-addons-dkms libelf-dev
+            # Create this symlink because some init scripts are hard-coded to use /RealmGateway
+            ln -snf /home/vagrant/RealmGateway /RealmGateway
+            # Execute provisioning script to install dependencies for LXC and network namespace deployments
+            cd /RealmGateway/provisioning/virtual_machine/
+            ./provision_lxc_deployment.sh
+            ./provision_netns_deployment.sh
         SHELL
-
-        # Install Python dependencies
-        node.vm.provision "shell", inline: <<-SHELL
-            python3 -m pip install --upgrade pip setuptools
-            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython NetfilterQueue python-iptables pyroute2 ryu scapy
-        SHELL
-
-        # Install Vagrant for Linux Containers deployments
-        node.vm.provision "shell", inline: <<-SHELL
-            wget --no-verbose --directory-prefix=/tmp https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb
-            dpkg --skip-same-version --install /tmp/vagrant_2.2.10_x86_64.deb
-            rm /tmp/vagrant_2.2.10_x86_64.deb
-            vagrant plugin install vagrant-lxc
-        SHELL
-
-        # Configure common services
-        node.vm.provision "shell", inline: <<-SHELL
-            systemctl disable apt-daily.timer apt-daily-upgrade.timer systemd-resolved
-            systemctl stop    apt-daily.timer apt-daily-upgrade.timer systemd-resolved
-            # Use local dnsmasq instance
-            unlink /etc/resolv.conf
-            cat <<EOF > /etc/resolv.conf
-nameserver 127.0.0.1
-EOF
-            # Write custom configuration for local dnsmasq instance
-            cat <<EOF > /etc/dnsmasq.d/rgw.conf
-# Forward to router *.demo SOA zone
-server=/demo/100.64.0.1#53
-
-# Forward to router *.64.100.in-addr.arpa SOA zone
-server=/64.100.in-addr.arpa/100.64.0.1#53
-
-# Forward to VirtualBox and Google DNS all other queries
-server=10.0.2.3
-server=8.8.8.8
-server=8.8.4.4
-
-# Other options
-no-dhcp-interface=lo
-no-negcache
-user=dnsmasq
-pid-file=/var/run/dnsmasq/dnsmasq.pid
-log-facility=/var/log/dnsmasq
-EOF
-            # Restart service with new configuration
-            systemctl enable  dnsmasq.service
-            systemctl restart dnsmasq.service
-        SHELL
-
-        # Enable iptables MASQUERADE on the default network interface
-        node.vm.provision "shell", inline: "iptables -t nat -I POSTROUTING -o $(ip route show | grep default | awk '{ print $5}') -j MASQUERADE"
-
-        # Configure alias(es)
-        node.vm.provision "shell", inline: "cat <<EOF >> /root/.bashrc
-# Alias to ssh with the UserAgent, do not store known host and disable key checking
-alias sshq='ssh -A -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
-EOF"
-
-        # Synchronize nsbash script with base64 encoding because of quotation marks
-        node.vm.provision "shell", inline: "cat <<EOF | base64 -d > /sbin/nsbash && chmod 755 /sbin/nsbash
-IyEvYmluL2Jhc2gKCiMgUnVuIGEgYmFzaCBpbnN0YW5jZSBpbnNpZGUgYSBuZXR3b3JrIG5hbWVz
-cGFjZSB3aXRoIG1vZGlmaWVkIHByb21wdAojIFBsYWNlIHRoZSBmaWxlIGluIC9zYmluL25zYmFz
-aCBhbmQgZ2l2ZSAreCBwZXJtaXNzaW9ucwojIyBVc2FnZTogIHN1ZG8gbnNiYXNoIG5zMQojIyBS
-ZXN1bHQ6IG5zMSMgCgppcCBuZXRucyBleGVjICQxIC9iaW4vYmFzaCAgLS1yY2ZpbGUgPChlY2hv
-ICJQUzE9XCIkMSMgXCIiKQo=
-EOF"
-
-        # Configure other system parameters
-        ## SSH key pair
-        node.vm.provision "shell", inline: <<-SHELL
-            cp  /realmgateway/provisioning/id_rsa        /home/vagrant/.ssh/id_rsa
-            cat /realmgateway/provisioning/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
-            chown -R vagrant: /home/vagrant
-        SHELL
-
-        ## Custom sysctl parameters
-        node.vm.provision "shell", inline: "cat <<EOF >> /etc/sysctl.d/10-rgw.conf
-# Custom extend number of files
-fs.file-max=2097152
-fs.inotify.max_queued_events=1048576
-fs.inotify.max_user_instances=1048576
-fs.inotify.max_user_watches=1048576
-
-# Enable IPv4 forwarding
-net.ipv4.ip_forward=1
-
-# Accept ICMP redirects for IPv4
-net.ipv4.conf.all.accept_redirects=1
-
-# Disable IPv6
-net.ipv6.conf.all.disable_ipv6=1
-net.ipv6.conf.default.disable_ipv6=1
-net.ipv6.conf.lo.disable_ipv6=1
-
-# Reduce TIME_WAIT socket connections
-net.ipv4.tcp_fin_timeout=1
-
-# Increase virtual memory areas
-vm.max_map_count=262144
-
-# Increase system IP port limits
-net.ipv4.ip_local_port_range=1024 65535
-
-# Increase conntrack size 1:16 bucket ratio for 4M connections
-
-# Increase bucket size: Verify input parameter with 'modinfo nf_conntrack' / (expect_hashsize or hashsize)
-net.netfilter.nf_conntrack_buckets=262144
-### In recent kernels it might not be possible to modify this value on the fly, alternatively try one of the following:
-### Option 1: echo 'options nf_conntrack expect_hashsize=262144' > /etc/modprobe.d/nf_conntrack.conf
-### Option 2: /sbin/modprobe nf_conntrack expect_hashsize=262144
-
-## Increase max number of connections
-net.netfilter.nf_conntrack_max=4194304
-
-### It is a good idea to reboot the system to ensure the kernel module is loaded with the appropriate configuration and reapplying the settings with 'sysctl --system'
-### Verify the values are loaded correctly!
-EOF"
-
-        ## Increase limits
-        node.vm.provision "shell", inline: "cat <<EOF > /etc/security/limits.d/rgw.conf
-# Prevent too many open files
-*       soft    nofile    1048576
-*       hard    nofile    1048576
-root    soft    nofile    1048576
-root    hard    nofile    1048576
-EOF"
-
-        ## Reload sysctl values
-        node.vm.provision "shell", inline: "sysctl --system"
 
         # Display post-up message
         #node.vm.post_up_message = "VM is ready, use `vagrant ssh rgw-dev` to connect to it."

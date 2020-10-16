@@ -11,7 +11,7 @@ apt install -y iptables ipset bridge-utils conntrack python3-yaml openvswitch-sw
 apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
 
 python3 -m pip install --upgrade pip setuptools
-python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython NetfilterQueue python-iptables pyroute2 ryu scapy
+python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 NetfilterQueue python-iptables pyroute2 ryu scapy
 
 echo "Enable NAT"
 /sbin/iptables -t nat -I POSTROUTING -o $(ip route show | grep default | awk '{ print $5}') -j MASQUERADE

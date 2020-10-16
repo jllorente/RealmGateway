@@ -12,6 +12,8 @@ Vagrant.configure(2) do |config|
         # Use one-off file provisioner maintaining file permission
         node.vm.provision "file", source: "./common/rootfs", destination: "/var/tmp/rootfs"
         node.vm.provision "file", source: "./public/rootfs", destination: "/var/tmp/rootfs"
+        # This shared mount does not preserve permissions but it remains _up-to-date_ for running code
+        node.vm.synced_folder "/RealmGateway", "/RealmGateway"
 
         # Install apt package dependencies
         node.vm.provision "shell", inline: <<-SHELL
@@ -20,7 +22,13 @@ Vagrant.configure(2) do |config|
             echo 'nameserver 8.8.8.8' > /etc/resolv.conf
             apt install -y apt-transport-https && apt update
             apt install -y arping curl dnsutils ethtool tcpdump lksctp-tools
-            apt install -y ftp vsftpd iperf
+            apt install -y ftp vsftpd iperf python3-dev python3-pip ipython3
+        SHELL
+
+        # Install Python dependencies
+        node.vm.provision "shell", inline: <<-SHELL
+            python3 -m pip install --upgrade pip setuptools
+            python3 -m pip install --upgrade --use-feature=2020-resolver dnspython==1.16.0 scapy
         SHELL
 
         # Configure common services

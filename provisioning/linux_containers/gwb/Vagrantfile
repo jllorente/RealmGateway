@@ -29,7 +29,7 @@ Vagrant.configure(2) do |config|
         # Install Python dependencies
         node.vm.provision "shell", inline: <<-SHELL
             python3 -m pip install --upgrade pip setuptools
-            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython NetfilterQueue python-iptables pyroute2 ryu scapy
+            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 NetfilterQueue python-iptables pyroute2 ryu scapy
         SHELL
 
         # Configure common services
