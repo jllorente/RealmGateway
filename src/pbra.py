@@ -874,6 +874,8 @@ class PolicyBasedResourceAllocation(container3.Container):
         self.updatekeys(group1)
         # Update DNS group_id of uStateDNSHost identified by NCID
         hosts = self.lookup((KEY_DNSHOST_NCID_SCOPE, group2.group_id))
+        if hosts is None:
+            return
         # HACK: container3 is initialized with set()
         for host in list(hosts):
             self._logger.info('Updating uStateDNSHost {}'.format(host))
