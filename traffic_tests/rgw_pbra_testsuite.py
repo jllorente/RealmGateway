@@ -92,12 +92,43 @@ TASK_NUMBER = 0
 
 DETERMINISTIC_ALLOCATION = True
 
-LAST_UDP_PORT = 30000
-LAST_TCP_PORT = 30000
-LAST_QUERY_ID = 30000
-UDP_PORT_RANGE = (20000, 65535)
-TCP_PORT_RANGE = (20000, 65535)
-QUERY_ID_RANGE = (20000, 65535)
+# Multiple re-runs of the tests may interfere with conntrack state on long-running RealmGateway sessions
+# We can get around the issue persisting the _LAST_ elements used for the next text run of the program
+RUNTIME_STATE_FILE = '/var/run/rgw_pbra_testsuite.json'
+LAST_UDP_PORT = 10000
+LAST_TCP_PORT = 10000
+LAST_QUERY_ID = 10000
+UDP_PORT_RANGE = (10000, 65535)
+TCP_PORT_RANGE = (10000, 65535)
+QUERY_ID_RANGE = (10000, 65535)
+
+def load_runtime_state():
+    try:
+        with open(RUNTIME_STATE_FILE, 'r') as infile:
+            state = json.load(infile)
+            global LAST_UDP_PORT
+            global LAST_TCP_PORT
+            global LAST_QUERY_ID
+            LAST_UDP_PORT = state['LAST_UDP_PORT']
+            LAST_TCP_PORT = state['LAST_TCP_PORT']
+            LAST_QUERY_ID = state['LAST_QUERY_ID']
+        logger.info('Successfully read state from {}'.format(RUNTIME_STATE_FILE))
+    except:
+        pass
+
+def save_runtime_state():
+    try:
+        state = {
+            'LAST_UDP_PORT': LAST_UDP_PORT,
+            'LAST_TCP_PORT': LAST_TCP_PORT,
+            'LAST_QUERY_ID': LAST_QUERY_ID,
+        }
+        with open(RUNTIME_STATE_FILE, 'w') as outfile:
+            outfile.writelines(json.dumps(state, indent=4))
+        logger.info('Successfully wrote state to {}'.format(RUNTIME_STATE_FILE))
+    except:
+        pass
+
 
 def get_deterministic_port(proto):
     if proto in ['tcp', 6, socket.SOCK_STREAM]:
@@ -1496,6 +1527,7 @@ if __name__ == '__main__':
     #loop.set_debug(True)
 
     try:
+        load_runtime_state()
         main = MainTestClient(args)
         loop.run_until_complete(main.monitor_pending_tasks())
     except KeyboardInterrupt:
@@ -1503,6 +1535,7 @@ if __name__ == '__main__':
 
     #logger.warning('All tasks completed!')
     loop.stop()
+    save_runtime_state()
     main.process_results()
 
     print('MSG_SENT      {}'.format(MSG_SENT))
