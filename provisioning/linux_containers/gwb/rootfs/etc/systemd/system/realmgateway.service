@@ -2,6 +2,7 @@
 Description=RealmGateway service
 
 [Service]
+Environment=LOG_LEVEL=INFO
 ExecStart=/RealmGateway/src/rgw.py                                             \
             --name             gwb.demo                                        \
             --dns-soa          gwb.demo. cname-gwb.demo.                       \

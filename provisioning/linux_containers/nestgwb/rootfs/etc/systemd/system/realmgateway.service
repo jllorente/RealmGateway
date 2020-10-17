@@ -2,6 +2,7 @@
 Description=RealmGateway service
 
 [Service]
+Environment=LOG_LEVEL=INFO
 ExecStart=/RealmGateway/src/rgw.py                                             \
             --name             nest.gwb.demo                                   \
             --dns-soa          nest.gwb.demo.                                  \
