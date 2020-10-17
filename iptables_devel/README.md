@@ -54,7 +54,7 @@ Install the following build dependencies as follow:
 
 ```
 sudo apt update
-sudo apt install iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
+sudo apt install libxtables-dev libip4tc-dev libip6tc-dev automake bison flex libmnl-dev libnftnl-dev libtool
 ```
 
 Ensure the APT source lists include the correspondent `deb-src` repository to download the source package for `iptables`:

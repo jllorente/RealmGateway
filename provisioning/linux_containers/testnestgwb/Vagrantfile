@@ -29,7 +29,7 @@ Vagrant.configure(2) do |config|
             cp -R /var/tmp/rootfs/* /
             chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
-            systemctl start runatstartup
+            systemctl enable runatstartup && systemctl start runatstartup
         SHELL
 
         # Configure specific services

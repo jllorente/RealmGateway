@@ -64,7 +64,7 @@ if __name__ == '__main__':
     for addr in args.udp:
         laddr = tuple(addr.split(':'))
         print('Starting UDP EchoServer @{}:{}'.format(laddr[0], laddr[1]))
-        udp_endpoint = loop.create_datagram_endpoint(UdpEchoServer, local_addr=laddr, reuse_address=True)
+        udp_endpoint = loop.create_datagram_endpoint(UdpEchoServer, local_addr=laddr, reuse_port=True)
         transport, protocol = loop.run_until_complete(udp_endpoint)
         transports.append(transport)
     for addr in args.tcp:

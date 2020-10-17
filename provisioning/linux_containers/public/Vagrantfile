@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
             cp -R /var/tmp/rootfs/* /
             chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
-            systemctl start runatstartup
+            systemctl enable runatstartup && systemctl start runatstartup
         SHELL
 
         # Configure specific services
@@ -48,7 +48,7 @@ Vagrant.configure(2) do |config|
             for ip in 100.64.{248..255}.{0..16}; do ip address add $ip/32 dev wan0; done
             systemctl restart vsftpd
             # Configure delay buckets
-            /sbin/mark_delay --nic wan0 --start 1 --step 1 --end 250
+            /usr/bin/mark_delay --nic wan0 --start 1 --step 1 --end 250
         SHELL
 
         # Configure container networking

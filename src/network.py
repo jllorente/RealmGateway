@@ -1096,7 +1096,7 @@ class Network(object):
                         addr[0], addr[1], e
                     )
                 )
-                yield from asyncio.sleep(1)
+                yield from asyncio.sleep(10)
 
         self._logger.warning(
             "Successfully connected to SYNPROXY server @ {}:{}".format(addr[0], addr[1])

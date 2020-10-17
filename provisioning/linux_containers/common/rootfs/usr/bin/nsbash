@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run a bash instance inside a network namespace with modified prompt
-# Place the file in /sbin/nsbash and give +x permissions
+# Place the file in /usr/bin/nsbash and give +x permissions
 ## Usage:  sudo nsbash ns1
 ## Result: ns1#
 

@@ -11,7 +11,7 @@ fi
 /sbin/sysctl -w net.ipv4.tcp_timestamps=1
 /sbin/sysctl -w net.netfilter.nf_conntrack_tcp_loose=0
 
-/sbin/flushIptables
+/usr/bin/flushIptables
 
 /sbin/iptables -t raw    -N SYNPROXY_RULES
 /sbin/iptables -t raw    -A PREROUTING     -i wan0 -j SYNPROXY_RULES

@@ -26,4 +26,4 @@ ip link set dev wan0p txqueuelen $TXQUEUELEN
 ip link set dev ovs-synproxy txqueuelen $TXQUEUELEN
 
 # Flush iptables configuration
-/sbin/flushIptables
+/usr/bin/flushIptables

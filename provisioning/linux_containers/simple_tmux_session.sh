@@ -76,5 +76,7 @@ tmux send-keys 'curl http://test.gwa.demo:8008/etc/hostname' Enter
 ### Select pane 3 // public
 tmux select-pane -t 1
 
+sleep 1
+
 # Attach to session
 tmux -2 attach-session -d

@@ -35,7 +35,7 @@ Vagrant.configure(2) do |config|
             cp -R /var/tmp/rootfs/* /
             chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
-            systemctl start runatstartup
+            systemctl enable runatstartup && systemctl start runatstartup
         SHELL
 
         # Configure specific services
@@ -45,7 +45,7 @@ Vagrant.configure(2) do |config|
             # Remove default gateway due to custom routing
             ip route delete default
             # Set exec bit on custom synproxy implementation(s)
-            chmod +x /sbin/*synproxy
+            chmod +x /usr/bin/*synproxy
             disableOffload wan0
             disableOffload wan0p
             # Default operation mode - pseudowire without proxy

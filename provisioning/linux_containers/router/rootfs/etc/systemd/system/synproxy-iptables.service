@@ -4,8 +4,8 @@ Description=Linux kernel implementation of TCP synproxy with iptables
 
 [Service]
 Type=oneshot
-ExecStart=/sbin/synproxy-iptables.sh
-ExecStopPost=/sbin/flushIptables
+ExecStart=/usr/bin/synproxy-iptables.sh
+ExecStopPost=/usr/bin/flushIptables
 RemainAfterExit=true
 
 [Install]

@@ -1122,9 +1122,10 @@ class PolicyBasedResourceAllocation(container3.Container):
 
         # Synchronize connection with SYNPROXY module
         ## TODO: Implement retrieval of TCP options policy from host?
-        if service_data['protocol'] in [0, 6]:
-            tcpmss, tcpsack, tcpwscale = 1460, 1, 7
-            yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
+        ## NOTE: Add/Update the SYNPROXY connection if values != default
+        #if service_data['protocol'] in [0, 6]:
+        #    tcpmss, tcpsack, tcpwscale = 1460, 1, 7
+        #    yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
 
         # Return the allocated address
         return allocated_ipv4
@@ -1183,13 +1184,14 @@ class PolicyBasedResourceAllocation(container3.Container):
 
 
         # Synchronize connection with SYNPROXY module
-        if (conn.outbound_port, conn.protocol) == (0 ,0):
-            # This is an FQDN connection -> Reset TCP default options in SYNPROXY connection!
-            tcpmss, tcpsack, tcpwscale = 1460, 1, 7
-            yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
-        elif conn.protocol in [0, 6]:
-            # This is an (S)FQDN connection -> Remove from SYNPROXY!
-            yield from self.network.synproxy_del_connection(conn.outbound_ip, conn.outbound_port, conn.protocol)
+        ## NOTE: Delete/Update the SYNPROXY connection if values != default
+        #if (conn.outbound_port, conn.protocol) == (0 ,0):
+        #    # This is an FQDN connection -> Reset TCP default options in SYNPROXY connection!
+        #    tcpmss, tcpsack, tcpwscale = 1460, 1, 7
+        #    yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
+        #elif conn.protocol in [0, 6]:
+        #    # This is an (S)FQDN connection -> Remove from SYNPROXY!
+        #    yield from self.network.synproxy_del_connection(conn.outbound_ip, conn.outbound_port, conn.protocol)
 
 
     def _describe_service_data(self, service_data, partial_reuse=True):

@@ -5,7 +5,7 @@ echo "Provisioning environment for spawning a LXC deployment"
 echo "Install dependencies"
 export DEBIAN_FRONTEND=noninteractive
 apt install -y apt-transport-https && apt update
-apt install -y curl ethtool htop iptables iperf ipython3 lxc python3-lxc tcpdump tmux
+apt install -y curl wget ethtool htop iptables iperf ipython3 lxc python3-lxc tcpdump tmux
 
 echo "Install Vagrant and plugins"
 wget --no-verbose --directory-prefix=/tmp https://releases.hashicorp.com/vagrant/2.2.10/vagrant_2.2.10_x86_64.deb

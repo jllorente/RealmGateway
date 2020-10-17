@@ -3,7 +3,7 @@ Description=run script(s) at startup
 
 [Service]
 WorkingDirectory=/
-ExecStart=/sbin/runatstartup
+ExecStart=/usr/bin/runatstartup
 Restart=no
 
 [Install]

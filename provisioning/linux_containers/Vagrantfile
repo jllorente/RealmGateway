@@ -10,7 +10,8 @@ Vagrant.configure(2) do |config|
     config.ssh.insert_key = false
     #config.vm.box = "fgrehm/precise64-lxc"
     #config.vm.box = "debian/stretch64"
-    config.vm.box = "emptybox/ubuntu-bionic-amd64-lxc"
+    #config.vm.box = "emptybox/ubuntu-bionic-amd64-lxc"
+    config.vm.box = "hibox/focal64"
 end
 
 # Common

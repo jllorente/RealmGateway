@@ -5,7 +5,7 @@ Description=Stop any running TCP Synproxy instance
 Type=oneshot
 ExecStartPre=/bin/systemctl stop synproxy-iptables
 ExecStartPre=/bin/systemctl stop synproxy-nmsynproxy
-ExecStart=/sbin/synproxy-disable.sh
+ExecStart=/usr/bin/synproxy-disable.sh
 RemainAfterExit=true
 
 [Install]

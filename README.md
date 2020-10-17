@@ -12,7 +12,7 @@ Clone with ```git clone $REPOSITORY_URL --recursive```
 The following dependencies are required:
 
 ```
-apt-get install build-essential python3-dev libnetfilter-queue-dev python3-pip
+apt-get install build-essential python3-dev libnetfilter-queue-dev libnfnetlink-dev python3-pip
 apt-get install ipset libipset3 iptables ipset ebtables bridge-utils
 apt-get install ipsec-tools openvswitch-common openvswitch-ipsec openvswitch-switch python-openvswitch racoon
 ```
@@ -23,6 +23,7 @@ The following python dependencies are required:
 ```
 pip3 install --upgrade pip setuptools
 pip3 install --upgrade ipython dnspython aiohttp scapy-python3 pyyaml NetfilterQueue ryu python-iptables pyroute2 --user
+pip3 install --upgrade -U git+https://github.com/kti/python-netfilterqueue  --user
 ```
 
 

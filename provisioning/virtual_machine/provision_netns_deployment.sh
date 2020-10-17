@@ -5,13 +5,14 @@ echo "Provisioning environment for spawning a local deployment with network name
 echo "Install dependencies"
 export DEBIAN_FRONTEND=noninteractive
 apt install -y apt-transport-https && apt update
-apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
-apt install -y iptables-dev automake bison flex libmnl-dev libnftnl-dev libtool
+apt install -y build-essential git python3-dev python3-pip ipython3 libnetfilter-queue-dev libnfnetlink-dev
+apt install -y libxtables-dev libip4tc-dev libip6tc-dev automake bison flex libmnl-dev libnftnl-dev libtool
 apt install -y iptables ipset bridge-utils conntrack python3-yaml openvswitch-switch openvswitch-vtep
 apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
 
 python3 -m pip install --upgrade pip setuptools
-python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 NetfilterQueue python-iptables pyroute2 ryu scapy
+python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 python-iptables pyroute2 ryu scapy
+python3 -m pip install --upgrade -U git+https://github.com/kti/python-netfilterqueue
 
 echo "Enable NAT"
 /sbin/iptables -t nat -I POSTROUTING -o $(ip route show | grep default | awk '{ print $5}') -j MASQUERADE
@@ -69,7 +70,7 @@ chmod 600 /root/.ssh/id_rsa
 
 # Start systemd services
 systemctl daemon-reload
-systemctl start runatstartup
+systemctl enable runatstartup && systemctl start runatstartup
 
 # Reload sysctl parameters
 sysctl --system

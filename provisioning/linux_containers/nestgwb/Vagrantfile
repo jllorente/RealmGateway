@@ -21,7 +21,7 @@ Vagrant.configure(2) do |config|
             unlink /etc/resolv.conf || true
             echo 'nameserver 8.8.8.8' > /etc/resolv.conf
             apt install -y apt-transport-https && apt update
-            apt install -y build-essential python3-dev python3-pip ipython3 libnetfilter-queue-dev
+            apt install -y build-essential git python3-dev python3-pip ipython3 libnetfilter-queue-dev libnfnetlink-dev
             apt install -y iptables ipset conntrack python3-yaml openvswitch-switch openvswitch-vtep
             apt install -y dnsutils curl htop ethtool isc-dhcp-server dnsmasq nginx tmux tree psmisc tmux tcpdump iperf
         SHELL
@@ -29,7 +29,8 @@ Vagrant.configure(2) do |config|
         # Install Python dependencies
         node.vm.provision "shell", inline: <<-SHELL
             python3 -m pip install --upgrade pip setuptools
-            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 NetfilterQueue python-iptables pyroute2 ryu scapy
+            python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 python-iptables pyroute2 ryu scapy
+            python3 -m pip install --upgrade -U git+https://github.com/kti/python-netfilterqueue
         SHELL
 
         # Configure common services
@@ -38,7 +39,7 @@ Vagrant.configure(2) do |config|
             cp -R /var/tmp/rootfs/* /
             chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
-            systemctl start runatstartup
+            systemctl enable runatstartup && systemctl start runatstartup
         SHELL
 
         # Configure specific services
