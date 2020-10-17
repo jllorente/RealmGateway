@@ -19,7 +19,7 @@ Vagrant.configure(2) do |config|
             unlink /etc/resolv.conf || true
             echo 'nameserver 8.8.8.8' > /etc/resolv.conf
             apt install -y apt-transport-https && apt update
-            apt install -y arping conntrack dnsutils ethtool tcpdump
+            apt install -y arping conntrack dnsutils ethtool nano tcpdump
             apt install -y bind9 dnsmasq ipset iptables iperf
         SHELL
 

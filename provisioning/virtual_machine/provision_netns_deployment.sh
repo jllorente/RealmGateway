@@ -5,7 +5,7 @@ echo "Provisioning environment for spawning a local deployment with network name
 echo "Install dependencies"
 export DEBIAN_FRONTEND=noninteractive
 apt install -y apt-transport-https && apt update
-apt install -y build-essential git python3-dev python3-pip ipython3 libnetfilter-queue-dev libnfnetlink-dev
+apt install -y build-essential git nano python3-dev python3-pip ipython3 libnetfilter-queue-dev libnfnetlink-dev
 apt install -y libxtables-dev libip4tc-dev libip6tc-dev automake bison flex libmnl-dev libnftnl-dev libtool
 apt install -y iptables ipset bridge-utils conntrack python3-yaml openvswitch-switch openvswitch-vtep
 apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
