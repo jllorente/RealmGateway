@@ -9,11 +9,13 @@ Vagrant.configure(2) do |config|
 
     ## Realm Gateway
     config.vm.define "rgw-dev" do |node|
-        #node.vm.box = "ubuntu/bionic64"
-        node.vm.box = "ubuntu/focal64"
         node.vm.hostname = "rgw-dev"
         # requires: vagrant plugin install vagrant-disksize
         node.disksize.size = '25GB'
+        # Ubuntu 18
+        #node.vm.box = "ubuntu/bionic64"
+        # Ubuntu 20
+        node.vm.box = "ubuntu/focal64"
 
         # Configure VM specs per provider
         ## VirtualBox
@@ -47,15 +49,17 @@ Vagrant.configure(2) do |config|
 
         # Run installation scripts
         node.vm.provision "shell", inline: <<-SHELL
+            # Ensure we run as "root"
+            sudo su
             # Create this symlink because some init scripts are hard-coded to use /RealmGateway
             ln -snf /home/vagrant/RealmGateway /RealmGateway
             # Execute provisioning script to install dependencies for LXC and network namespace deployments
-            #cd /RealmGateway/provisioning/virtual_machine/
-            #./provision_lxc_deployment.sh
-            #./provision_netns_deployment.sh
+            cd /RealmGateway/provisioning/virtual_machine/
+            ./provision_lxc_deployment.sh
+            ./provision_netns_deployment.sh
         SHELL
 
         # Display post-up message
-        #node.vm.post_up_message = "VM is ready, use `vagrant ssh rgw-dev` to connect to it."
+        node.vm.post_up_message = "VM is ready, use `vagrant ssh rgw-dev` to connect to it."
     end
 end

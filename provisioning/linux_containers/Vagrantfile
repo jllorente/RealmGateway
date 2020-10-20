@@ -2,15 +2,13 @@
 ## date:        10/09/2020
 ## description: Development VM for Realm Gateway & Customer Edge Switching
 
-# Network bridges:
-# br-mgt0 br-wan0 br-wan1 br-wan2 br-wan1-gwa br-wan2-gwb br-lan0-gwa br-lan0-gwb br-lan0-ngwa br-lan0-ngwb
 
 Vagrant.configure(2) do |config|
     # Define default values
     config.ssh.insert_key = false
-    #config.vm.box = "fgrehm/precise64-lxc"
-    #config.vm.box = "debian/stretch64"
+    # Ubuntu 18
     #config.vm.box = "emptybox/ubuntu-bionic-amd64-lxc"
+    # Ubuntu 20
     config.vm.box = "hibox/focal64"
 end
 

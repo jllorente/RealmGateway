@@ -10,7 +10,7 @@ apt install -y libxtables-dev libip4tc-dev libip6tc-dev automake bison flex libm
 apt install -y iptables ipset bridge-utils conntrack python3-yaml openvswitch-switch openvswitch-vtep
 apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
 
-python3 -m pip install --upgrade pip setuptools
+python3 -m pip install --upgrade testresources pip setuptools
 python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 python-iptables pyroute2 ryu scapy
 python3 -m pip install --upgrade -U git+https://github.com/kti/python-netfilterqueue
 
@@ -70,7 +70,8 @@ chmod 600 /root/.ssh/id_rsa
 
 # Start systemd services
 systemctl daemon-reload
-systemctl enable runatstartup && systemctl start runatstartup
+systemctl enable runatstartup
+systemctl start runatstartup
 
 # Reload sysctl parameters
 sysctl --system

@@ -25,7 +25,7 @@ Vagrant.configure(2) do |config|
 
         # Install Python dependencies
         node.vm.provision "shell", inline: <<-SHELL
-            python3 -m pip install --upgrade pip setuptools
+            python3 -m pip install --upgrade testresources pip setuptools
             python3 -m pip install --upgrade --use-feature=2020-resolver python-iptables
         SHELL
 
@@ -35,7 +35,8 @@ Vagrant.configure(2) do |config|
             cp -R /var/tmp/rootfs/* /
             chmod 600 /root/.ssh/id_rsa
             systemctl daemon-reload
-            systemctl enable runatstartup && systemctl start runatstartup
+            systemctl enable runatstartup
+            systemctl start runatstartup
         SHELL
 
         # Configure specific services
