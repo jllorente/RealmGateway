@@ -55,7 +55,7 @@ for NIC in br-mgt0 br-wan0 br-wan1 br-wan2 br-wan1-gwa br-wan2-gwb br-lan0-gwa b
 do
 	echo "Setting up $NIC"
 	ip link del dev $NIC 2> /dev/null
-	ip link add dev $NIC txqueuelen 25000 type bridge forward_delay 0
+	ip link add dev $NIC txqueuelen 1000 type bridge forward_delay 0
 	ip link set dev $NIC up
 done
 

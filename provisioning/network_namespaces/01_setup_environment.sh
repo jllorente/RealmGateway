@@ -75,14 +75,14 @@ rmmod br_netfilter &> /dev/null
 
 # [COMMON]
 ## WAN side
-ip link add dev ns-wan0 txqueuelen 25000 type bridge
+ip link add dev ns-wan0 txqueuelen 1000 type bridge
 ip link set dev ns-wan0 up
-ip link add dev ns-wan1 txqueuelen 25000 type bridge
+ip link add dev ns-wan1 txqueuelen 1000 type bridge
 ip link set dev ns-wan1 up
 
 # [RealmGateway-A]
 ## LAN side
-ip link add dev ns-lan0-gwa txqueuelen 25000 type bridge
+ip link add dev ns-lan0-gwa txqueuelen 1000 type bridge
 ip link set dev ns-lan0-gwa up
 
 
@@ -100,7 +100,7 @@ for netns in router public gwa testgwa; do setup_basic_netns $netns; done
 ###############################################################################
 
 ## Create a macvlan interface to provide NAT and communicate with the other virtual hosts
-ip link add link ns-wan0 dev tap-wan0 txqueuelen 25000 type macvlan mode bridge
+ip link add link ns-wan0 dev tap-wan0 txqueuelen 1000 type macvlan mode bridge
 ip link set dev tap-wan0 up
 ip address add 100.64.0.254/24 dev tap-wan0
 ip route add 100.64.0.0/16 via 100.64.0.1
@@ -111,8 +111,8 @@ ip route add 100.64.0.0/16 via 100.64.0.1
 ###############################################################################
 
 ## Configure interface(s)
-ip link add link ns-wan0 dev wan0 txqueuelen 25000 type macvlan mode bridge
-ip link add link ns-wan1 dev wan1 txqueuelen 25000 type macvlan mode bridge
+ip link add link ns-wan0 dev wan0 txqueuelen 1000 type macvlan mode bridge
+ip link add link ns-wan1 dev wan1 txqueuelen 1000 type macvlan mode bridge
 ip link set dev wan0 up netns router
 ip link set dev wan1 up netns router
 ip netns exec router ip address add 100.64.0.1/24 dev wan0
@@ -147,7 +147,7 @@ ip netns exec router dnsmasq --server=/gwa.demo/100.64.1.130         \
 ###############################################################################
 
 ## Configure interface(s)
-ip link add link ns-wan0 dev wan0 txqueuelen 25000 type macvlan mode bridge
+ip link add link ns-wan0 dev wan0 txqueuelen 1000 type macvlan mode bridge
 ip link set dev wan0 up netns public
 ip netns exec public ip address add 100.64.0.100/24 dev wan0
 ip netns exec public ip route add default via 100.64.0.1 dev wan0
@@ -156,14 +156,17 @@ echo "nameserver 100.64.0.1" > /etc/netns/public/resolv.conf
 ip netns exec public bash -c "for ip in 100.64.{248..255}.{0..16}; do ip address add \$ip/32 dev wan0; done"
 # Configure delay buckets
 ip netns exec public mark_delay --nic wan0 --start 1 --step 1 --end 250
+# Disable conntrack
+ip netns exec public iptables -t raw -I OUTPUT     -j CT --notrack
+ip netns exec public iptables -t raw -I PREROUTING -j CT --notrack
 
 ###############################################################################
 # Create gwa configuration
 ###############################################################################
 
 ## Configure interface(s)
-ip link add link ns-wan1     dev wan0 txqueuelen 25000 type macvlan mode bridge
-ip link add link ns-lan0-gwa dev lan0 txqueuelen 25000 type macvlan mode bridge
+ip link add link ns-wan1     dev wan0 txqueuelen 1000 type macvlan mode bridge
+ip link add link ns-lan0-gwa dev lan0 txqueuelen 1000 type macvlan mode bridge
 ip link set dev wan0 up netns gwa
 ip link set dev lan0 up netns gwa
 ip netns exec gwa ip address add 192.168.0.1/24  dev lan0
@@ -179,10 +182,13 @@ ip netns exec gwa bash -c "for ip in 100.64.1.{131..142}; do ip address add \$ip
 # Create testgwa configuration
 ###############################################################################
 
-ip link add link ns-lan0-gwa dev lan0 txqueuelen 25000 type macvlan mode bridge
+ip link add link ns-lan0-gwa dev lan0 txqueuelen 1000 type macvlan mode bridge
 ip link set dev lan0 up netns testgwa
 ip netns exec testgwa ip address add 192.168.0.100/24 dev lan0
 ip netns exec testgwa ip route add default via 192.168.0.1 dev lan0
+# Disable conntrack
+ip netns exec public iptables -t raw -I OUTPUT     -j CT --notrack
+ip netns exec public iptables -t raw -I PREROUTING -j CT --notrack
 echo "nameserver 192.168.0.1" > /etc/netns/testgwa/resolv.conf
 # Add _private_ test IP addresses to testgwa node
 ip netns exec testgwa bash -c "for ip in 192.168.0.{200..209}; do ip address add \$ip/32 dev lan0; done"

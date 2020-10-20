@@ -20,7 +20,7 @@ ip link set dev wan0 up
 ip link set dev wan0p up
 
 # Configure txqueuelen of interfaces / default is 1000
-TXQUEUELEN=25000
+TXQUEUELEN=1000
 ip link set dev wan0  txqueuelen $TXQUEUELEN
 ip link set dev wan0p txqueuelen $TXQUEUELEN
 ip link set dev ovs-synproxy txqueuelen $TXQUEUELEN
