@@ -50,6 +50,9 @@ Vagrant.configure(2) do |config|
             systemctl restart vsftpd
             # Configure delay buckets
             /usr/bin/mark_delay --nic wan0 --start 1 --step 1 --end 250
+            # Disable conntrack
+            iptables -t raw -I OUTPUT -j CT --notrack
+            iptables -t raw -I PREROUTING -j CT --notrack
         SHELL
 
         # Configure container networking
