@@ -57,7 +57,7 @@ from network import Network
 from pbra import PolicyBasedResourceAllocation
 from pool import PoolContainer, NamePool, AddressPoolShared, AddressPoolUser
 from suricata import SuricataAlert
-from helpers_n_wrappers import utils3
+from helpers_n_wrappers import container3, utils3
 from global_variables import RUNNING_TASKS
 
 
@@ -76,6 +76,11 @@ def setup_logging_yaml(
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=level)
+    # HACK: Set log level in container3
+    container3.LOGLEVELCONTAINER = level
+    container3.LOGLEVELNODE = level
+    #print(f"container3.LOGLEVELCONTAINER: {container3.LOGLEVELCONTAINER}")
+    #print(f"container3.LOGLEVELNODE: {container3.LOGLEVELNODE}")
 
 
 def parse_arguments():
@@ -292,25 +297,24 @@ class RealmGateway(object):
         # Get logger
         self._logger = logging.getLogger(self._config.name)
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         self._logger.warning("RealmGateway_v2 is starting...")
         # Initialize Data Repository
-        yield from self._init_datarepository()
+        await self._init_datarepository()
         # Initialize Address Pools
-        yield from self._init_pools()
+        await self._init_pools()
         # Initialize Host table
-        yield from self._init_hosttable()
+        await self._init_hosttable()
         # Initialize Connection table
-        yield from self._init_connectiontable()
+        await self._init_connectiontable()
         # Initialize Network
-        yield from self._init_network()
+        await self._init_network()
         # Initialize Policy Based Resource Allocation
-        yield from self._init_pbra()
+        await self._init_pbra()
         # Initialize PacketCallbacks
-        yield from self._init_packet_callbacks()
+        await self._init_packet_callbacks()
         # Initialize DNS
-        yield from self._init_dns()
+        await self._init_dns()
         # Create task: CircularPool cleanup
         _t = asyncio.ensure_future(self._init_cleanup_cpool(0.1))
         RUNNING_TASKS.append((_t, "cleanup_cpool"))
@@ -321,16 +325,15 @@ class RealmGateway(object):
         _t = asyncio.ensure_future(self._init_show_dnsgroups(60.0))
         RUNNING_TASKS.append((_t, "show_dnsgroups"))
         # Initialize Subscriber information
-        yield from self._init_subscriberdata()
+        await self._init_subscriberdata()
 
         # Initialize Subscriber information
-        yield from self._init_suricata("0.0.0.0", 12346)
+        await self._init_suricata("0.0.0.0", 12346)
 
         # Ready!
         self._logger.warning("RealmGateway_v2 is ready!")
 
-    @asyncio.coroutine
-    def _init_datarepository(self):
+    async def _init_datarepository(self):
         # Initialize Data Repository
         self._logger.warning("Initializing Data Repository")
         configfile = self._config.getdefault("repository_subscriber_file", None)
@@ -346,8 +349,7 @@ class RealmGateway(object):
             api_url=api_url,
         )
 
-    @asyncio.coroutine
-    def _init_pools(self):
+    async def _init_pools(self):
         self._logger.warning("Initializing Address Pools")
         # Create container of Address Pools
         self._pooltable = PoolContainer()
@@ -375,18 +377,15 @@ class RealmGateway(object):
             self._logger.info("Adding resource(s) to pool {} @ <{}>".format(ipaddr, ap))
             ap.add_to_pool(ipaddr)
 
-    @asyncio.coroutine
-    def _init_hosttable(self):
+    async def _init_hosttable(self):
         # Create container of Hosts
         self._hosttable = HostTable()
 
-    @asyncio.coroutine
-    def _init_connectiontable(self):
+    async def _init_connectiontable(self):
         # Create container of Connections
         self._connectiontable = ConnectionTable()
 
-    @asyncio.coroutine
-    def _init_network(self):
+    async def _init_network(self):
         self._logger.warning("Initializing Network")
         self._network = Network(
             ipt_cpool_queue=self._config.ipt_cpool_queue,
@@ -403,8 +402,7 @@ class RealmGateway(object):
             pooltable=self._pooltable,
         )
 
-    @asyncio.coroutine
-    def _init_pbra(self):
+    async def _init_pbra(self):
         # Create container of Reputation objects
         self._logger.warning("Initializing Policy Based Resource Allocation")
         self._pbra = PolicyBasedResourceAllocation(
@@ -416,8 +414,7 @@ class RealmGateway(object):
             cname_soa=self._config.dns_cname_soa,
         )
 
-    @asyncio.coroutine
-    def _init_packet_callbacks(self):
+    async def _init_packet_callbacks(self):
         # Create object for storing all PacketIn-related information
         self.packetcb = PacketCallbacks(
             network=self._network,
@@ -427,8 +424,7 @@ class RealmGateway(object):
         # Register NFQUEUE(s) callback
         self._network.ipt_register_nfqueues(self.packetcb.packet_in_circularpool)
 
-    @asyncio.coroutine
-    def _init_dns(self):
+    async def _init_dns(self):
         # Create object for storing all DNS-related information
         self._dnscb = DNSCallbacks(
             cachetable=None,
@@ -465,7 +461,7 @@ class RealmGateway(object):
             cb_function = lambda x, y, z: asyncio.ensure_future(
                 self._dnscb.ddns_process(x, y, z)
             )
-            transport, protocol = yield from self._loop.create_datagram_endpoint(
+            transport, protocol = await self._loop.create_datagram_endpoint(
                 functools.partial(DDNSServer, cb_default=cb_function),
                 local_addr=(ipaddr, port),
             )
@@ -480,7 +476,7 @@ class RealmGateway(object):
             cb_nosoa = lambda x, y, z: asyncio.ensure_future(
                 self._dnscb.dns_process_rgw_wan_nosoa(x, y, z)
             )
-            transport, protocol = yield from self._loop.create_datagram_endpoint(
+            transport, protocol = await self._loop.create_datagram_endpoint(
                 functools.partial(
                     DNSProxy, soa_list=soa_list, cb_soa=cb_soa, cb_nosoa=cb_nosoa
                 ),
@@ -501,7 +497,7 @@ class RealmGateway(object):
             cb_nosoa = lambda x, y, z: asyncio.ensure_future(
                 self._dnscb.dns_process_rgw_wan_nosoa(x, y, z)
             )
-            server = yield from self._loop.create_server(
+            server = await self._loop.create_server(
                 functools.partial(
                     DNSTCPProxy, soa_list=soa_list, cb_soa=cb_soa, cb_nosoa=cb_nosoa
                 ),
@@ -525,7 +521,7 @@ class RealmGateway(object):
             cb_nosoa = lambda x, y, z: asyncio.ensure_future(
                 self._dnscb.dns_process_rgw_lan_nosoa(x, y, z)
             )
-            transport, protocol = yield from self._loop.create_datagram_endpoint(
+            transport, protocol = await self._loop.create_datagram_endpoint(
                 functools.partial(
                     DNSProxy, soa_list=soa_list, cb_soa=cb_soa, cb_nosoa=cb_nosoa
                 ),
@@ -543,7 +539,7 @@ class RealmGateway(object):
             cb_nosoa = lambda x, y, z: asyncio.ensure_future(
                 self._dnscb.dns_error_response(x, y, z, rcode=dns.rcode.REFUSED)
             )
-            transport, protocol = yield from self._loop.create_datagram_endpoint(
+            transport, protocol = await self._loop.create_datagram_endpoint(
                 functools.partial(
                     DNSProxy, soa_list=soa_list, cb_soa=cb_soa, cb_nosoa=cb_nosoa
                 ),
@@ -552,8 +548,7 @@ class RealmGateway(object):
             self._logger.info("Creating DNS Proxy endpoint @{}:{}".format(ipaddr, port))
             self._dnscb.register_object("DNSProxy@{}:{}".format(ipaddr, port), protocol)
 
-    @asyncio.coroutine
-    def _init_subscriberdata(self):
+    async def _init_subscriberdata(self):
         self._logger.warning("Initializing subscriber data")
         tzero = self._loop.time()
         for subs_id, subs_data in self._datarepository.get_policy_host_all({}).items():
@@ -562,46 +557,42 @@ class RealmGateway(object):
             self._logger.debug(
                 "Registering subscriber {} / {}@{}".format(subs_id, fqdn, ipaddr)
             )
-            yield from self._dnscb.ddns_register_user(fqdn, 1, ipaddr)
+            await self._dnscb.ddns_register_user(fqdn, 1, ipaddr)
         self._logger.info(
             "Completed initializacion of subscriber data in {:.3f} sec".format(
                 self._loop.time() - tzero
             )
         )
 
-    @asyncio.coroutine
-    def _init_cleanup_cpool(self, delay):
+    async def _init_cleanup_cpool(self, delay):
         self._logger.warning(
             "Initiating cleanup of the Circular Pool every {} seconds".format(delay)
         )
         while True:
-            yield from asyncio.sleep(delay)
+            await asyncio.sleep(delay)
             # Update table and remove expired elements
             self._connectiontable.update_all_rgw()
 
-    @asyncio.coroutine
-    def _init_cleanup_pbra_timers(self, delay):
+    async def _init_cleanup_pbra_timers(self, delay):
         self._logger.warning(
             "Initiating cleanup of PBRA timers every {} seconds".format(delay)
         )
         while True:
-            yield from asyncio.sleep(delay)
+            await asyncio.sleep(delay)
             # Update table and remove expired elements
             self._pbra.cleanup_timers()
 
-    @asyncio.coroutine
-    def _init_show_dnsgroups(self, delay):
+    async def _init_show_dnsgroups(self, delay):
         self._logger.warning(
             "Initiating display of DNSGroup information every {} seconds".format(delay)
         )
         self._pbra.debug_dnsgroups(transition=False)
         while True:
-            yield from asyncio.sleep(delay)
+            await asyncio.sleep(delay)
             # Update table and remove expired elements
             self._pbra.debug_dnsgroups(transition=True)
 
-    @asyncio.coroutine
-    def shutdown(self):
+    async def shutdown(self):
         self._logger.warning("RealmGateway_v2 is shutting down...")
         self._dnscb.shutdown()
         self._network.shutdown()
@@ -611,14 +602,13 @@ class RealmGateway(object):
             with suppress(asyncio.CancelledError):
                 self._logger.info("Cancelling {} task".format(task_name))
                 task_obj.cancel()
-                yield from asyncio.sleep(1)
-                yield from task_obj
+                await asyncio.sleep(1)
+                await task_obj
                 self._logger.warning(">> Cancelled {} task".format(task_name))
 
-    @asyncio.coroutine
-    def _init_suricata(self, ipaddr, port):
+    async def _init_suricata(self, ipaddr, port):
         ## Added for Suricata testing
-        transport, protocol = yield from self._loop.create_datagram_endpoint(
+        transport, protocol = await self._loop.create_datagram_endpoint(
             SuricataAlert, local_addr=(ipaddr, port)
         )
         self._logger.warning(

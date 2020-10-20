@@ -168,8 +168,7 @@ class SYNProxyDataplane:
                 kwargs["tcpwscale"],
             )
 
-    @asyncio.coroutine
-    def shutdown(self):
+    async def shutdown(self):
         self._logger.warning("Removing OpenvSwitch instance")
 
         ## Delete OVS bridge
@@ -186,7 +185,7 @@ class SYNProxyDataplane:
         for _task in self.tasks:
             with suppress(asyncio.CancelledError):
                 del _task
-                yield from asyncio.sleep(1)
+                await asyncio.sleep(1)
 
     def ovs_create(self):
         self._logger.info("Create OpenvSwitch instance")
@@ -411,8 +410,7 @@ class SYNProxyDataplane:
         else:
             return b"0\n"
 
-    @asyncio.coroutine
-    def monitor(self, interval):
+    async def monitor(self, interval):
         """ Monitoring service to display periodic information """
         self._logger.info(
             "Monitoring connection table state every {} sec".format(interval)
@@ -430,7 +428,7 @@ class SYNProxyDataplane:
                         for _i, _c in enumerate(connections)
                     )
                 )
-            yield from asyncio.sleep(interval)
+            await asyncio.sleep(interval)
 
     def _do_subprocess_call(self, command, raise_exc=True, silent=False):
         try:

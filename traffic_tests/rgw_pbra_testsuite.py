@@ -1238,7 +1238,7 @@ class MainTestClient(object):
         for filename in self.args.config:
             # Read YAML configuration file
             with open(filename, 'r') as infile:
-                config_d = yaml.load(infile)
+                config_d = yaml.safe_load(infile)
             # Return a list of tasks with scheduled test instances
             task_list = self._create_schedule_session(config_d)
             self.logger.warning('Scheduled {} task(s) from config file {}'.format(len(task_list), filename))

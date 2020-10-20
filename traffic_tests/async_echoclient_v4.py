@@ -46,11 +46,10 @@ def _now(ref = 0):
     """ Return current time based on event loop """
     return loop.time() - ref
 
-@asyncio.coroutine
-def _timeit(coro, scale = 1):
+async def _timeit(coro, scale = 1):
     """ Execute a coroutine and return the time consumed in second scale """
     t0 = _now()
-    r = yield from coro
+    r = await coro
     return (_now(t0)*scale, r)
 
 
@@ -136,18 +135,17 @@ class uDNSResolverCustom():
     '''
     # Instantiated as follows
     resolver = uDNSResolver()
-    response = yield from resolver.do_resolve(query, raddr, timeouts=[1, 1, 1])
+    response = await resolver.do_resolve(query, raddr, timeouts=[1, 1, 1])
     '''
 
-    @asyncio.coroutine
-    def do_resolve(self, query, addr, timeouts=[0]):
+    async def do_resolve(self, query, addr, timeouts=[0]):
         self._logger = logging.getLogger('uDNSResolverCustom #{}'.format(id(self)))
         self._logger.debug('Resolving to {} with timeouts {}'.format(addr, timeouts))
         loop = asyncio.get_event_loop()
         self.sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.setblocking(False)
-        yield from loop.sock_connect(self.sock, addr)
+        await loop.sock_connect(self.sock, addr)
         fqdn = query.question[0].name
         queryid = query.id
         ipaddr = None
@@ -156,8 +154,8 @@ class uDNSResolverCustom():
         for tout in timeouts:
             attempt += 1
             try:
-                yield from loop.sock_sendall(self.sock, query.to_wire())
-                dataresponse = yield from asyncio.wait_for(loop.sock_recv(self.sock, 1024), timeout=tout)
+                await loop.sock_sendall(self.sock, query.to_wire())
+                dataresponse = await asyncio.wait_for(loop.sock_recv(self.sock, 1024), timeout=tout)
                 self.sock.close()
                 ipaddr = dns.message.from_wire(dataresponse).answer[0][0].address
                 break
@@ -177,25 +175,24 @@ class uDataEchoCustom():
     '''
     # Instantiated as follows
     echo = uDataEchoCustom()
-    response = yield from echo.do_echo(data, raddr, timeouts=[1, 1, 1])
+    response = await echo.do_echo(data, raddr, timeouts=[1, 1, 1])
     '''
 
-    @asyncio.coroutine
-    def do_echo(self, data, addr, timeouts=[0]):
+    async def do_echo(self, data, addr, timeouts=[0]):
         self._logger = logging.getLogger('uDataEchoCustom #{}'.format(id(self)))
         self._logger.debug('Echoing to {} with timeouts {}'.format(addr, timeouts))
         loop = asyncio.get_event_loop()
         self.sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.setblocking(False)
-        yield from loop.sock_connect(self.sock, addr)
+        await loop.sock_connect(self.sock, addr)
         recvdata = None
         attempt = 0
         for tout in timeouts:
             attempt += 1
             try:
-                yield from loop.sock_sendall(self.sock, query.to_wire())
-                recvdata = yield from asyncio.wait_for(loop.sock_recv(self.sock, 1024), timeout=tout)
+                await loop.sock_sendall(self.sock, query.to_wire())
+                recvdata = await asyncio.wait_for(loop.sock_recv(self.sock, 1024), timeout=tout)
                 self.sock.close()
                 break
             except asyncio.TimeoutError:
@@ -245,19 +242,17 @@ class UdpTestClient():
         self._tzero = _now()
         asyncio.async(self._run())
 
-    @asyncio.coroutine
-    def get_local_ipaddr(self, remote_ip):
+    async def get_local_ipaddr(self, remote_ip):
         s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        yield from self._loop.sock_connect(s , (remote_ip, 65000))
+        await self._loop.sock_connect(s , (remote_ip, 65000))
         ipaddr = s.getsockname()[0]
         s.close()
         return ipaddr
 
-    @asyncio.coroutine
-    def _run_full(self):
+    async def _run_full(self):
         # Untested
-        yield from self._run_dnsonly()
-        yield from self._run_dataonly()
+        await self._run_dnsonly()
+        await self._run_dataonly()
 
     def create_dns_query(self):
         self.query = dns.message.make_query(self.fqdn, 1)
@@ -278,11 +273,10 @@ class UdpTestClient():
                 self._logger.warning('Unsupported EDNS0 {}/{}'.format(opt_code, opt_data))
         return options
 
-    @asyncio.coroutine
-    def _run_dnsonly(self):
+    async def _run_dnsonly(self):
         self._logger.debug('#{} {} @ {}'.format(self.index, self.fqdn, '???'))
         coro = uDNSResolverCustom().do_resolve(self.query, (self.dnsaddr, self.dnsport), self.dnstimeouts)
-        (t, (self.ipaddr, queryid, dnsattempt)) = yield from _timeit(coro, 1000)
+        (t, (self.ipaddr, queryid, dnsattempt)) = await _timeit(coro, 1000)
         # Evaluate DNS resolution
         if self.ipaddr is None:
             self._logger.info('#{} {} {} @ {} / DNS KO ({} {:.3f}ms)'.format(self.index, queryid, self.fqdn, '!#%!#%', dnsattempt, t))
@@ -292,17 +286,16 @@ class UdpTestClient():
         self._logger.info('#{} {} {} @ {} / DNS OK ({} {:.3f}ms)'.format(self.index, queryid, self.fqdn, self.ipaddr, dnsattempt, t))
         self._add_result(ok=True, dnsok = True, dnsattempt = dnsattempt, dnstime = t)
 
-    @asyncio.coroutine
-    def _run_dataonly(self):
+    async def _run_dataonly(self):
         # Validate destination IP address
         if self.ipaddr is None:
             return
 
         self._logger.debug('#{} @{}:{}'.format(self.index, self.ipaddr, self.port))
-        # Create DATA connection coroutine and yield from it
+        # Create DATA connection coroutine and await it
         msg = '{} {}:{}\n'.format(self.index, self.ipaddr, self.ipaddr, self.port)
         coro = uDataEchoCustom().do_echo(msg.encode(), (self.ipaddr, self.port), self.datatimeouts)
-        (t, (recvdata, dataattempt)) = yield from _timeit(coro, 1000)
+        (t, (recvdata, dataattempt)) = await _timeit(coro, 1000)
         # Set fqdn for result logging
         self.fqdn = 'N/A'
         if recvdata is None:
@@ -424,15 +417,13 @@ class EchoClientMain(object):
         return domains
 
 
-    @asyncio.coroutine
-    def run(self):
-        (self.t_gen, self.first_task_at, self.last_task_at) = yield from self.prepare_tasks(self.args)
+    async def run(self):
+        (self.t_gen, self.first_task_at, self.last_task_at) = await self.prepare_tasks(self.args)
         self._logger.warning('Generation took {:.3f} sec'.format(self.t_gen))
-        self.last_task_ended_at = yield from self.monitor_pending_tasks()
+        self.last_task_ended_at = await self.monitor_pending_tasks()
 
 
-    @asyncio.coroutine
-    def prepare_tasks(self, args):
+    async def prepare_tasks(self, args):
         loop = asyncio.get_event_loop()
         maxiter = int(args.load * args.duration)
         self._logger.warning('Generating {} connection attemps'.format(maxiter))
@@ -483,15 +474,14 @@ class EchoClientMain(object):
         last_task_at = taskdelay
         return (t_gen, first_task_at, last_task_at)
 
-    @asyncio.coroutine
-    def monitor_pending_tasks(self, watchdog = WATCHDOG):
+    async def monitor_pending_tasks(self, watchdog = WATCHDOG):
         # Monitor number of remaining tasks and exit when done
         i = 0
         t0 = loop.time()
         while len(loop._scheduled):
             i += 1 # Counter of iterations
             self._logger.warning('({:.3f}) [{}] Pending tasks: {}'.format(loop.time()-t0, i, len(loop._scheduled)))
-            yield from asyncio.sleep(watchdog)
+            await asyncio.sleep(watchdog)
         return loop.time()
 
     def callback_testclient(self, k, v):

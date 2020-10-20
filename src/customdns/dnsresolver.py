@@ -190,17 +190,16 @@ class uDNSResolver():
     '''
     # Instantiated as follows
     resolver = uDNSResolver()
-    response = yield from resolver.do_resolve(query, raddr, timeouts=[1, 1, 1])
+    response = await resolver.do_resolve(query, raddr, timeouts=[1, 1, 1])
     '''
 
-    @asyncio.coroutine
-    def do_resolve(self, query, addr, timeouts=[0]):
+    async def do_resolve(self, query, addr, timeouts=[0]):
         logger = logging.getLogger('DNSResolver #{}'.format(id(self)))
         logger.debug('Resolving to {} with timeouts {}'.format(addr, timeouts))
         loop = asyncio.get_event_loop()
         self.sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.sock.setblocking(False)
-        yield from loop.sock_connect(self.sock, addr)
+        await loop.sock_connect(self.sock, addr)
         # Create async socket wrapper object
         self.asock = AsyncSocketQueue(self.sock, loop)
         fqdn = format(query.question[0].name).lower()
@@ -209,8 +208,8 @@ class uDNSResolver():
         for tout in timeouts:
             i += 1
             try:
-                yield from self.asock.sendall(query.to_wire())
-                dataresponse = yield from asyncio.wait_for(self.asock.recv(), timeout=tout)
+                await self.asock.sendall(query.to_wire())
+                dataresponse = await asyncio.wait_for(self.asock.recv(), timeout=tout)
                 self.asock.close()
                 return dns.message.from_wire(dataresponse)
             except asyncio.TimeoutError:
@@ -218,7 +217,6 @@ class uDNSResolver():
                 continue
         return None
 
-    @asyncio.coroutine
-    def do_continue(self, query):
+    async def do_continue(self, query):
         loop = asyncio.get_event_loop()
-        yield from self.asock.sendall(query.to_wire())
+        await self.asock.sendall(query.to_wire())

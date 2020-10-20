@@ -46,12 +46,11 @@ class TcpEchoServer(asyncio.Protocol):
         self._transport.write(data)
 
 
-@asyncio.coroutine
-def monitor(period = MONITOR_INTERVAL):
+async def monitor(period = MONITOR_INTERVAL):
     while True:
         print('TCP messages / connections: {} / {}'.format(TCP_MSG_COUNTER, TCP_CON_COUNTER), file=sys.stderr, flush=True)
         print('UDP messages / connections: {} / {}'.format(UDP_MSG_COUNTER, UDP_CON_COUNTER), file=sys.stderr, flush=True)
-        yield from asyncio.sleep(period)
+        await asyncio.sleep(period)
 
 
 if __name__ == '__main__':

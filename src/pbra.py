@@ -548,6 +548,12 @@ class PolicyBasedResourceAllocation(container3.Container):
 
     def __init__(self, **kwargs):
         """ Initialize as a Container """
+
+
+        print(f"container3.LOGLEVELCONTAINER: {container3.LOGLEVELCONTAINER}")
+        print(f"container3.LOGLEVELNODE: {container3.LOGLEVELNODE}")
+        print(f"{kwargs}")
+
         super().__init__('PolicyBasedResourceAllocation')
         # Override attributes
         utils3.set_attributes(self, override=True, **kwargs)
@@ -759,8 +765,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             # Register an untrusted event
             query.reputation_resolver.event_untrusted()
 
-    @asyncio.coroutine
-    def pbra_dns_preprocess_rgw_wan_soa(self, query, addr, host_obj, service_data):
+    async def pbra_dns_preprocess_rgw_wan_soa(self, query, addr, host_obj, service_data):
         """ This function implements section: Tackling real resolutions and reputation for remote server(s) and DNS clusters """
         '''
         TODO: Here is a list with ideas related to policy enforcement
@@ -882,8 +887,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             host.ncid = (group1.group_id, host.ncid[1])
             self.updatekeys(host)
 
-    @asyncio.coroutine
-    def pbra_dns_process_rgw_wan_soa(self, query, addr, host_obj, service_data, host_ipv4):
+    async def pbra_dns_process_rgw_wan_soa(self, query, addr, host_obj, service_data, host_ipv4):
         fqdn = query.fqdn
         rdtype = query.question[0].rdtype
 
@@ -902,7 +906,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             # Resolve via Circular Pool
             self._logger.debug('Process {} with CircularPool ({}) for {} / {}'.format(fqdn, dns.rdatatype.to_text(rdtype), host_ipv4, service_data))
             # Decision making based on load level(s) and reputation
-            allocated_ipv4 = yield from self._rgw_allocate_circularpool(query, addr, host_obj, service_data, host_ipv4)
+            allocated_ipv4 = await self._rgw_allocate_circularpool(query, addr, host_obj, service_data, host_ipv4)
 
         # Create cached record
         self._rgw_cache_set(fqdn, rdtype, allocated_ipv4)
@@ -940,8 +944,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         allocated_ipv4 = ap_spool.release(ap_spool.allocate())
         return allocated_ipv4
 
-    @asyncio.coroutine
-    def _rgw_allocate_circularpool(self, query, addr, host_obj, service_data, host_ipv4):
+    async def _rgw_allocate_circularpool(self, query, addr, host_obj, service_data, host_ipv4):
         """ Takes in a DNS query for CircularPool """
         # Get Circular Pool policy for host
         host_policy = host_obj.get_service('CIRCULARPOOL')
@@ -959,7 +962,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             return None
 
         # Enforce Circular Pool policy to allocate an address
-        allocated_ipv4 = yield from self._unified_policy_circularpool(query, addr, host_obj, service_data, host_ipv4)
+        allocated_ipv4 = await self._unified_policy_circularpool(query, addr, host_obj, service_data, host_ipv4)
         return allocated_ipv4
 
     def _normalize_reputation_value(self, value):
@@ -995,8 +998,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         elif math == 'avg':
             return (r_resolver + r_requestor) / 2.0
 
-    @asyncio.coroutine
-    def _unified_policy_circularpool(self, query, addr, host_obj, service_data, host_ipv4):
+    async def _unified_policy_circularpool(self, query, addr, host_obj, service_data, host_ipv4):
         '''
         Execute unified policy enforcement
         Calculate current system load and attempt to execute all matching policies
@@ -1050,7 +1052,7 @@ class PolicyBasedResourceAllocation(container3.Container):
             # 3. Minimum reputation is required for overloading an existing IP address for an SFQDN service
                 (sfqdn and reputation >= policy['sfqdn_reuse'] and sfqdn_reuse is True)):
                 self._logger.info('Policy accepted! {}'.format(log_msg))
-                allocated_ipv4 = yield from self._best_effort_allocate(query, addr, host_obj, service_data, host_ipv4)
+                allocated_ipv4 = await self._best_effort_allocate(query, addr, host_obj, service_data, host_ipv4)
                 return allocated_ipv4
 
             # Fine-grained logging of policy violation
@@ -1059,8 +1061,7 @@ class PolicyBasedResourceAllocation(container3.Container):
         # No policy could be executed
         return None
 
-    @asyncio.coroutine
-    def _best_effort_allocate(self, query, addr, host_obj, service_data, host_ipv4):
+    async def _best_effort_allocate(self, query, addr, host_obj, service_data, host_ipv4):
         # Obtain FQDN from query
         fqdn_query = query.fqdn
         fqdn_alias = service_data.get('_fqdn', fqdn_query)
@@ -1125,13 +1126,12 @@ class PolicyBasedResourceAllocation(container3.Container):
         ## NOTE: Add/Update the SYNPROXY connection if values != default
         #if service_data['protocol'] in [0, 6]:
         #    tcpmss, tcpsack, tcpwscale = 1460, 1, 7
-        #    yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
+        #    await self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
 
         # Return the allocated address
         return allocated_ipv4
 
-    @asyncio.coroutine
-    def _cb_connection_deleted(self, conn):
+    async def _cb_connection_deleted(self, conn):
         self._logger.debug('Delete callback for node {}'.format(conn))
 
         if conn.hasexpired():
@@ -1188,10 +1188,10 @@ class PolicyBasedResourceAllocation(container3.Container):
         #if (conn.outbound_port, conn.protocol) == (0 ,0):
         #    # This is an FQDN connection -> Reset TCP default options in SYNPROXY connection!
         #    tcpmss, tcpsack, tcpwscale = 1460, 1, 7
-        #    yield from self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
+        #    await self.network.synproxy_add_connection(conn.outbound_ip, conn.outbound_port, conn.protocol, tcpmss, tcpsack, tcpwscale)
         #elif conn.protocol in [0, 6]:
         #    # This is an (S)FQDN connection -> Remove from SYNPROXY!
-        #    yield from self.network.synproxy_del_connection(conn.outbound_ip, conn.outbound_port, conn.protocol)
+        #    await self.network.synproxy_del_connection(conn.outbound_ip, conn.outbound_port, conn.protocol)
 
 
     def _describe_service_data(self, service_data, partial_reuse=True):

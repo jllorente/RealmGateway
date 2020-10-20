@@ -126,16 +126,15 @@ class DNSCallbacks(object):
             return
         self._dns_timeout[record_type] = timeouts
 
-    @asyncio.coroutine
-    def ddns_register_user(self, fqdn, rdtype, ipaddr):
+    async def ddns_register_user(self, fqdn, rdtype, ipaddr):
         # TODO: Move all this complexity to network module? Maybe it's more fitting...
         self._logger.info('Register new user {} @ {}'.format(fqdn, ipaddr))
 
         # Download user data
-        user_data = yield from self.datarepository.get_policy_host(fqdn, default = None)
+        user_data = await self.datarepository.get_policy_host(fqdn, default = None)
         if user_data is None:
             self._logger.info('Generating default subscriber data for {}'.format(fqdn))
-            user_data = yield from self.datarepository.get_policy_host_default(fqdn, ipaddr)
+            user_data = await self.datarepository.get_policy_host_default(fqdn, ipaddr)
 
         host_obj = HostEntry(name=fqdn, fqdn=fqdn, ipv4=ipaddr, services=user_data)
         self.hosttable.add(host_obj)
@@ -161,8 +160,7 @@ class DNSCallbacks(object):
             self.network.ipt_add_user_carriergrade(hostname, carriergrade_ipt)
 
 
-    @asyncio.coroutine
-    def ddns_deregister_user(self, fqdn, rdtype, ipaddr):
+    async def ddns_deregister_user(self, fqdn, rdtype, ipaddr):
         self._logger.info('Deregister user {} @ {}'.format(fqdn, ipaddr))
         if not self.hosttable.has((host.KEY_HOST_FQDN, fqdn)):
             self._logger.warning('Failed to deregister: user {} not found'.format(fqdn))
@@ -181,8 +179,7 @@ class DNSCallbacks(object):
             carriergrade_ipt = host_obj.get_service('CARRIERGRADE', [])
             self.network.ipt_remove_user_fwrules(hostname, carriergrade_ipt)
 
-    @asyncio.coroutine
-    def ddns_process(self, query, addr, cback):
+    async def ddns_process(self, query, addr, cback):
         """ Process DDNS query from DHCP server """
         self._logger.debug('process_update')
         try:
@@ -190,9 +187,9 @@ class DNSCallbacks(object):
             for rr in query.authority:
                 #Filter out non A record types
                 if rr.rdtype == dns.rdatatype.A and rr.ttl != 0:
-                    yield from self.ddns_register_user(format(rr.name), rr.rdtype, rr[0].address)
+                    await self.ddns_register_user(format(rr.name), rr.rdtype, rr[0].address)
                 elif rr.rdtype == dns.rdatatype.A and rr.ttl == 0:
-                    yield from self.ddns_deregister_user(format(rr.name), rr.rdtype, rr[0].address)
+                    await self.ddns_deregister_user(format(rr.name), rr.rdtype, rr[0].address)
         except Exception as e:
             self._logger.warning('Failed to process UPDATE DNS message {}'.format(e))
         finally:
@@ -202,8 +199,7 @@ class DNSCallbacks(object):
             cback(query, addr, response)
 
 
-    @asyncio.coroutine
-    def _do_resolve_carriergrade(self, query, host_addr, circular_pool = False):
+    async def _do_resolve_carriergrade(self, query, host_addr, circular_pool = False):
         """ Resolve DNS query with host_addr. Return (dns_rcode, ipv4, service_data) """
         # Obtain FQDN from query
         fqdn = format(query.question[0].name)
@@ -217,7 +213,7 @@ class DNSCallbacks(object):
         response = None
         try:
             resolver = uDNSResolver()
-            response = yield from resolver.do_resolve(query, (host_addr, 53), timeouts=timeouts)
+            response = await resolver.do_resolve(query, (host_addr, 53), timeouts=timeouts)
         except ConnectionRefusedError:
             # Socket error / DNS Server unavailable
             self._logger.debug('ConnectionRefusedError: Resolve CarrierGrade domain: [{}] {} via {}'.format(dns.rdatatype.to_text(rdtype), fqdn, host_addr))
@@ -285,8 +281,7 @@ class DNSCallbacks(object):
             return (dns.rcode.NOERROR, None, None)
 
 
-    @asyncio.coroutine
-    def dns_process_rgw_lan_soa(self, query, addr, cback):
+    async def dns_process_rgw_lan_soa(self, query, addr, cback):
         """ Process DNS query from private network of a name in a SOA zone """
         # Forward or continue to DNS resolver
         fqdn = query.fqdn
@@ -332,7 +327,7 @@ class DNSCallbacks(object):
                 return
 
             self._logger.debug('Process {} with CarrierGrade resolution'.format(fqdn))
-            _rcode, _ipv4, _service_data = yield from self._dns_resolve_circularpool_carriergrade(host_obj, fqdn, addr, service_data)
+            _rcode, _ipv4, _service_data = await self._dns_resolve_circularpool_carriergrade(host_obj, fqdn, addr, service_data)
             if not _ipv4:
                 # Propagate rcode value
                 response = dnsutils.make_response_rcode(query, rcode=_rcode, recursion_available=True)
@@ -360,8 +355,7 @@ class DNSCallbacks(object):
             cback(query, addr, response)
 
 
-    @asyncio.coroutine
-    def dns_process_rgw_lan_nosoa(self, query, addr, cback):
+    async def dns_process_rgw_lan_nosoa(self, query, addr, cback):
         """ Process DNS query from private network of a name not in a SOA zone """
         # Forward or continue to DNS resolver
         q = query.question[0]
@@ -382,7 +376,7 @@ class DNSCallbacks(object):
         resolver = uDNSResolver()
         self.activequeries[key] = resolver
         try:
-            response = yield from resolver.do_resolve(query, raddr, timeouts=self.dns_get_timeout(rdtype))
+            response = await resolver.do_resolve(query, raddr, timeouts=self.dns_get_timeout(rdtype))
         except ConnectionRefusedError:
             # Failed to resolve DNS query - Drop DNS Query
             self._logger.warning('ConnectionRefusedError: Resolving {} via {}:{}'.format(fqdn, raddr[0], raddr[1]))
@@ -396,8 +390,7 @@ class DNSCallbacks(object):
         cback(query, addr, response)
 
 
-    @asyncio.coroutine
-    def dns_process_rgw_wan_soa(self, query, addr, cback):
+    async def dns_process_rgw_wan_soa(self, query, addr, cback):
         """ Process DNS query from public network of a name in a SOA zone """
         fqdn = query.fqdn
         rdtype = query.question[0].rdtype
@@ -434,7 +427,7 @@ class DNSCallbacks(object):
             return
 
         # Pre-process request with PBRA. Quick return response if pre-emptive actions are required due to policy
-        response = yield from self.pbra.pbra_dns_preprocess_rgw_wan_soa(query, addr, host_obj, service_data)
+        response = await self.pbra.pbra_dns_preprocess_rgw_wan_soa(query, addr, host_obj, service_data)
         if response is not None:
             self._logger.debug('Preprocessing DNS response\n{}'.format(response))
             cback(query, addr, response)
@@ -457,7 +450,7 @@ class DNSCallbacks(object):
                 # Use original FQDN in carriergrade resolutions, instead of the alias CNAMEd FQDN
                 _carriergrade_fqdn = service_data['_fqdn']
                 self._logger.debug('CarrierGrade resolution using original fqdn={} instead of alias fqdn={}'.format(_carriergrade_fqdn, fqdn))
-            _rcode, _ipv4, _service_data = yield from self._dns_resolve_circularpool_carriergrade(host_obj, _carriergrade_fqdn, addr, service_data)
+            _rcode, _ipv4, _service_data = await self._dns_resolve_circularpool_carriergrade(host_obj, _carriergrade_fqdn, addr, service_data)
 
         if _ipv4 is None:
             # Propagate rcode value
@@ -466,14 +459,14 @@ class DNSCallbacks(object):
             return
 
         # Use PBRA to allocate an address according to policy
-        allocated_ipv4 = yield from self.pbra.pbra_dns_process_rgw_wan_soa(query, addr, host_obj, _service_data, _ipv4)
+        allocated_ipv4 = await self.pbra.pbra_dns_process_rgw_wan_soa(query, addr, host_obj, _service_data, _ipv4)
 
         if not allocated_ipv4 and query.transport == 'tcp':
             # Failed to allocate an address - hold and reattempt after T ms to bridge the gap with UDP queries
             rtx_t = 0.50
             self._logger.debug('Failed to allocate an address for {} via TCP, reattempting in {} msec'.format(fqdn, rtx_t*1000))
-            yield from asyncio.sleep(rtx_t)
-            allocated_ipv4 = yield from self.pbra.pbra_dns_process_rgw_wan_soa(query, addr, host_obj, _service_data, _ipv4)
+            await asyncio.sleep(rtx_t)
+            allocated_ipv4 = await self.pbra.pbra_dns_process_rgw_wan_soa(query, addr, host_obj, _service_data, _ipv4)
 
         if not allocated_ipv4 and query.transport == 'tcp':
             # Failed to allocate an address - Answer with empty records to avoid stalling the TCP transaction
@@ -518,8 +511,7 @@ class DNSCallbacks(object):
 
         #self._logger.debug('/WAN SOA: {} ({}) from {}/{}\n\n'.format(fqdn, dns.rdatatype.to_text(rdtype), addr[0], query.transport))
 
-    @asyncio.coroutine
-    def _dns_resolve_circularpool_carriergrade(self, host_obj, fqdn, requestor_addr, service_data):
+    async def _dns_resolve_circularpool_carriergrade(self, host_obj, fqdn, requestor_addr, service_data):
         """ Resolve FQDN via CarrierGrade host. Return a tuple of (rcode, IPv4 address, service_data) if successful or (None, None) """
         host_ipaddr = host_obj.ipv4
         self._logger.debug('SOA CarrierGrade: {} via {}'.format(fqdn, host_ipaddr))
@@ -535,7 +527,7 @@ class DNSCallbacks(object):
         for rdtype in [dns.rdatatype.TXT, dns.rdatatype.SRV, dns.rdatatype.A]:
             try:
                 query_rdtype = dnsutils.make_query(fqdn, rdtype, options=[edns0_ecs, edns0_eci])
-                _rcode, _ipv4, _service_data =  yield from self._do_resolve_carriergrade(query_rdtype, host_ipaddr, circular_pool=True)
+                _rcode, _ipv4, _service_data =  await self._do_resolve_carriergrade(query_rdtype, host_ipaddr, circular_pool=True)
                 if _ipv4:
                     # Resolution succeeded
                     break
@@ -558,8 +550,7 @@ class DNSCallbacks(object):
         # Return allocated IPv4 and best service_data available
         return (_rcode, _ipv4, _service_data)
 
-    @asyncio.coroutine
-    def dns_process_rgw_wan_nosoa(self, query, addr, cback):
+    async def dns_process_rgw_wan_nosoa(self, query, addr, cback):
         """ Process DNS query from public network of a name not in a SOA zone """
         '''
         TODO: Here is a list with ideas related to mismatching queries
@@ -597,8 +588,7 @@ class DNSCallbacks(object):
         return
         '''
 
-    @asyncio.coroutine
-    def dns_error_response(self, query, addr, cback, rcode=dns.rcode.REFUSED):
+    async def dns_error_response(self, query, addr, cback, rcode=dns.rcode.REFUSED):
         # Create error response
         response = dnsutils.make_response_rcode(query, rcode=rcode, recursion_available=True)
         cback(query, addr, response)

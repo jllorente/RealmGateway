@@ -103,7 +103,7 @@ class DataRepository(object):
         data_d = {}
         try:
             self._logger.debug('Loading file <{}>'.format(filename))
-            data_d = yaml.load(open(filename,'r'))
+            data_d = yaml.safe_load(open(filename,'r'))
         except FileNotFoundError:
             self._logger.warning('Repository file not found <{}>'.format(filename))
         except:
@@ -141,8 +141,7 @@ class DataRepository(object):
             self._logger.warning('No data for policy <{}>'.format(policy_id))
             return default
 
-    @asyncio.coroutine
-    def get_policy_host(self, subscriber_id, default = None):
+    async def get_policy_host(self, subscriber_id, default = None):
         try:
             return self._get_policy_host()[subscriber_id]
         except KeyError as e:
@@ -156,8 +155,7 @@ class DataRepository(object):
             self._logger.warning('No data found for subscribers: {}'.format(e))
             return default
 
-    @asyncio.coroutine
-    def get_policy_host_default(self, fqdn, ipv4):
+    async def get_policy_host_default(self, fqdn, ipv4):
         data_d = {}
         data_d['ID'] = {'fqdn':fqdn, 'ipv4':ipv4}
         sfqdn_services = []

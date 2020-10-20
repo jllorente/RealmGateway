@@ -57,8 +57,7 @@ def synproxy_build_message(mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale
     return msg
 
 
-@asyncio.coroutine
-def synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, seq=1):
+async def synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, seq=1):
     # Create TCP socket
     sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -66,7 +65,7 @@ def synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, co
     sock.setblocking(False)
     # Connect TCP socket
     logger.info('Initiating connection to <{}:{}>'.format(ipaddr, port))
-    yield from loop.sock_connect(sock, (ipaddr, port))
+    await loop.sock_connect(sock, (ipaddr, port))
     logger.debug('Connected to <{}:{}>'.format(ipaddr, port))
     # Perform loop if benchmark mode is enabled (seq>1)
     t_zero = loop.time()
@@ -75,9 +74,9 @@ def synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, co
         _conn_port = (conn_port + i) & 0xFFFF
         msg = synproxy_build_message(mode, conn_ipaddr, _conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale)
         logger.debug('Sending control message <{}>'.format(msg))
-        yield from loop.sock_sendall(sock, msg)
+        await loop.sock_sendall(sock, msg)
         logger.debug('Waiting for response...')
-        data = yield from asyncio.wait_for(loop.sock_recv(sock, 1024), timeout=10)
+        data = await asyncio.wait_for(loop.sock_recv(sock, 1024), timeout=10)
         logger.debug('Received response <{}>'.format(data))
     t_elapsed = loop.time() - t_zero
     if seq > 1:
@@ -85,11 +84,10 @@ def synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, co
     sock.close()
 
 
-@asyncio.coroutine
-def synproxy_sendrecv_loop(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, seq=1, iter=1):
+async def synproxy_sendrecv_loop(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, seq=1, iter=1):
     t_zero = loop.time()
     for i in range(seq):
-        yield from synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, iter)
+        await synproxy_sendrecv(ipaddr, port, mode, conn_ipaddr, conn_port, conn_proto, conn_tcpmss, conn_tcpsack, conn_tcpwscale, iter)
     t_elapsed = loop.time() - t_zero
     logger.info('Completed {} sequence(s) of {} iteration(s) in {:.3f} (msec)'.format(seq, iter, t_elapsed*1000))
 

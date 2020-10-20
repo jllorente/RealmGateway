@@ -699,8 +699,7 @@ class Network(object):
         _t = asyncio.ensure_future(self.wait_up())
         RUNNING_TASKS.append((_t, "network.wait_up"))
 
-    @asyncio.coroutine
-    def ovs_init_flowtable(self):
+    async def ovs_init_flowtable(self):
         self._logger.info("Bootstrapping OpenvSwitch flow table")
 
         # Build URL for add and delete operations
@@ -709,7 +708,7 @@ class Network(object):
 
         # Remove all existing flows
         data = {"dpid": OVS_DATAPATH_ID}
-        yield from self.rest_api.do_post(url_delete, json.dumps(data))
+        await self.rest_api.do_post(url_delete, json.dumps(data))
 
         # Populate TABLE 0
         ## Install miss flow as DROP
@@ -720,7 +719,7 @@ class Network(object):
             "match": {},
             "actions": [],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         ## Outgoing CES-Local & CES-CES / Go to table 1
         data = {
@@ -734,7 +733,7 @@ class Network(object):
             },
             "actions": [{"type": "GOTO_TABLE", "table_id": 1}],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         ## Incoming CES-CES from tunneling ports / Go to table 2
         data = {
@@ -744,7 +743,7 @@ class Network(object):
             "match": {"in_port": OVS_PORT_TUN_GRE},
             "actions": [{"type": "GOTO_TABLE", "table_id": 2}],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         data = {
             "dpid": OVS_DATAPATH_ID,
@@ -753,7 +752,7 @@ class Network(object):
             "match": {"in_port": OVS_PORT_TUN_VXLAN},
             "actions": [{"type": "GOTO_TABLE", "table_id": 2}],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         data = {
             "dpid": OVS_DATAPATH_ID,
@@ -762,7 +761,7 @@ class Network(object):
             "match": {"in_port": OVS_PORT_TUN_GENEVE},
             "actions": [{"type": "GOTO_TABLE", "table_id": 2}],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         # Populate TABLE 1
         ## Install miss flow as DROP
@@ -773,7 +772,7 @@ class Network(object):
             "match": {},
             "actions": [],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         # Populate TABLE 2
         ## Install miss flow as DROP
@@ -784,10 +783,9 @@ class Network(object):
             "match": {},
             "actions": [],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
-    @asyncio.coroutine
-    def wait_up(self):
+    async def wait_up(self):
         """ Check with SDN controller the availability of the OpenvSwitch datapath """
         while True:
             self._logger.debug(
@@ -796,7 +794,7 @@ class Network(object):
             try:
                 # Returns a json encoded list of connected datapaths
                 url = urllib.parse.urljoin(self.api_url, API_URL_SWITCHES)
-                resp = yield from self.rest_api.do_get(url, None)
+                resp = await self.rest_api.do_get(url, None)
                 if OVS_DATAPATH_ID in json.loads(resp):
                     self._logger.info(
                         "OpenvSwitch datapath connected to SDN Controller / {}".format(
@@ -815,21 +813,20 @@ class Network(object):
                     "Failed to connect to SDN Controller: {}".format(e)
                 )
 
-            yield from asyncio.sleep(RYU_RECONNECT)
+            await asyncio.sleep(RYU_RECONNECT)
 
-        yield from self.ovs_init_flowtable()
+        await self.ovs_init_flowtable()
 
         # For testing purposes
-        # yield from self.add_local_connection('192.168.0.100', '172.16.0.1', '192.168.0.100', '172.16.0.1')
-        # yield from self.delete_local_connection('192.168.0.100', '172.16.0.1', '192.168.0.100', '172.16.0.1')
+        # await self.add_local_connection('192.168.0.100', '172.16.0.1', '192.168.0.100', '172.16.0.1')
+        # await self.delete_local_connection('192.168.0.100', '172.16.0.1', '192.168.0.100', '172.16.0.1')
         #
-        # yield from self.add_tunnel_connection('192.168.0.100', '172.16.0.2', '100.64.1.130', '100.64.2.130', 5, 50, 'gre')
-        # yield from self.add_tunnel_connection('192.168.0.100', '172.16.0.3', '100.64.1.130', '100.64.2.130', 6, 60, 'vxlan', True)
-        # yield from self.add_tunnel_connection('192.168.0.100', '172.16.0.4', '100.64.1.130', '100.64.2.130', 7, 70, 'geneve')
-        # yield from self.delete_tunnel_connection('192.168.0.100', '172.16.0.2', '100.64.1.130', '100.64.2.130', 5, 50, 'gre')
+        # await self.add_tunnel_connection('192.168.0.100', '172.16.0.2', '100.64.1.130', '100.64.2.130', 5, 50, 'gre')
+        # await self.add_tunnel_connection('192.168.0.100', '172.16.0.3', '100.64.1.130', '100.64.2.130', 6, 60, 'vxlan', True)
+        # await self.add_tunnel_connection('192.168.0.100', '172.16.0.4', '100.64.1.130', '100.64.2.130', 7, 70, 'geneve')
+        # await self.delete_tunnel_connection('192.168.0.100', '172.16.0.2', '100.64.1.130', '100.64.2.130', 5, 50, 'gre')
 
-    @asyncio.coroutine
-    def add_local_connection(self, src, psrc, dst, pdst):
+    async def add_local_connection(self, src, psrc, dst, pdst):
         self._logger.info(
             "Create CES local connection {}:{} <=> {}:{}".format(src, psrc, dst, pdst)
         )
@@ -856,7 +853,7 @@ class Network(object):
                 {"type": "OUTPUT", "port": OVS_PORT_IN},
             ],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         # Create second unidirectional connection
         data = {
@@ -877,10 +874,9 @@ class Network(object):
                 {"type": "OUTPUT", "port": OVS_PORT_IN},
             ],
         }
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
-    @asyncio.coroutine
-    def delete_local_connection(self, src, psrc, dst, pdst):
+    async def delete_local_connection(self, src, psrc, dst, pdst):
         self._logger.info(
             "Delete CES local connection {}:{} <=> {}:{}".format(src, psrc, dst, pdst)
         )
@@ -900,7 +896,7 @@ class Network(object):
                 "ipv4_dst": psrc,
             },
         }
-        yield from self.rest_api.do_post(url_delete, json.dumps(data))
+        await self.rest_api.do_post(url_delete, json.dumps(data))
 
         # Delete second unidirectional connection
         data = {
@@ -914,10 +910,9 @@ class Network(object):
                 "ipv4_dst": pdst,
             },
         }
-        yield from self.rest_api.do_post(url_delete, json.dumps(data))
+        await self.rest_api.do_post(url_delete, json.dumps(data))
 
-    @asyncio.coroutine
-    def add_tunnel_connection(
+    async def add_tunnel_connection(
         self,
         src,
         psrc,
@@ -979,7 +974,7 @@ class Network(object):
                 -1,
                 {"type": "SET_FIELD", "field": "ip_dscp", "value": OVS_DIFFSERV_MARK},
             )
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
         # Create outgoing unidirectional connection
         data = {
@@ -1004,10 +999,9 @@ class Network(object):
         if diffserv:
             # Add matching of IP.dscp field for DiffServ treatment
             data["match"]["ip_dscp"] = OVS_DIFFSERV_MARK
-        yield from self.rest_api.do_post(url_add, json.dumps(data))
+        await self.rest_api.do_post(url_add, json.dumps(data))
 
-    @asyncio.coroutine
-    def delete_tunnel_connection(
+    async def delete_tunnel_connection(
         self,
         src,
         psrc,
@@ -1049,7 +1043,7 @@ class Network(object):
                 "ipv4_dst": psrc,
             },
         }
-        yield from self.rest_api.do_post(url_delete, json.dumps(data))
+        await self.rest_api.do_post(url_delete, json.dumps(data))
 
         # Delete incoming unidirectional connection
         data = {
@@ -1067,18 +1061,17 @@ class Network(object):
         if diffserv:
             # Add matching of IP.dscp field for DiffServ treatment
             data["match"]["ip_dscp"] = OVS_DIFFSERV_MARK
-        yield from self.rest_api.do_post(url_delete, json.dumps(data))
+        await self.rest_api.do_post(url_delete, json.dumps(data))
 
     def synproxy_create(self):
         self.synproxy_obj = None
         self._synproxy_worker_task = None
         if self.synproxy is None:
-            self._logger.warning("No SYNPROXY defined!")
+            self._logger.warning("No SYNPROXY endpoint defined!")
             return
         asyncio.ensure_future(self._synproxy_respawn(self.synproxy))
 
-    @asyncio.coroutine
-    def _synproxy_respawn(self, addr):
+    async def _synproxy_respawn(self, addr):
         # Create SYNPROXY object and connect socket
         self.synproxy_obj = SynproxyClient(self.loop)
         while True:
@@ -1086,7 +1079,7 @@ class Network(object):
                 self._logger.info(
                     "Connecting to SYNPROXY server @ {}:{}".format(addr[0], addr[1])
                 )
-                yield from self.loop.create_connection(
+                await self.loop.create_connection(
                     lambda: self.synproxy_obj, host=addr[0], port=addr[1]
                 )
                 break
@@ -1096,7 +1089,7 @@ class Network(object):
                         addr[0], addr[1], e
                     )
                 )
-                yield from asyncio.sleep(10)
+                await asyncio.sleep(10)
 
         self._logger.warning(
             "Successfully connected to SYNPROXY server @ {}:{}".format(addr[0], addr[1])
@@ -1105,21 +1098,20 @@ class Network(object):
         asyncio.ensure_future(self._synproxy_monitor())
         # Install initial flows
         ## Flush all connections from SYNPROXY
-        yield from self.synproxy_sync_connection("flush", "0.0.0.0", 0, 0, 0, 0, 0, 2)
+        await self.synproxy_sync_connection("flush", "0.0.0.0", 0, 0, 0, 0, 0, 2)
         # Set default connection
-        yield from self.synproxy_sync_connection("mod", "0.0.0.0", 0, 0, 536, 0, 1, 2)
+        await self.synproxy_sync_connection("mod", "0.0.0.0", 0, 0, 536, 0, 1, 2)
         # Initialize IP address of the CircularPool and ServicePool pool with default TCP options
         ap_cpool = self.pooltable.get("circularpool")
         ap_spool = self.pooltable.get("servicepool")
         ap_pool = ap_cpool.get_pool() + ap_spool.get_pool()
         for ipaddr in ap_pool:
-            yield from self.synproxy_sync_connection("mod", ipaddr, 0, 0, 1460, 1, 7, 2)
+            await self.synproxy_sync_connection("mod", ipaddr, 0, 0, 1460, 1, 7, 2)
         self._logger.warning("Successfully initialized SYNPROXY flows")
 
-    @asyncio.coroutine
-    def _synproxy_monitor(self):
+    async def _synproxy_monitor(self):
         self._logger.warning("Monitoring status of SYNPROXY connection")
-        yield from self.synproxy_obj.terminated()
+        await self.synproxy_obj.terminated()
         self._logger.warning("SYNPROXY connection terminated")
         asyncio.ensure_future(self._synproxy_respawn(self.synproxy))
 
@@ -1128,8 +1120,7 @@ class Network(object):
         # if self.synproxy_obj is not None:
         #    self.synproxy_obj.connection_lost(True)
 
-    @asyncio.coroutine
-    def synproxy_sync_connection(
+    async def synproxy_sync_connection(
         self, mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale, timeout=1
     ):
         # Accepted modes are ['flush', 'add', 'mod', 'del']
@@ -1147,7 +1138,7 @@ class Network(object):
                     mode, (ipaddr, port, proto, tcpmss, tcpsack, tcpwscale, timeout)
                 )
             )
-            ret = yield from asyncio.wait_for(
+            ret = await asyncio.wait_for(
                 self.synproxy_obj.sendrecv_message(
                     mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale
                 ),
@@ -1181,18 +1172,16 @@ class Network(object):
                 "Failed to <{}> connection to SYNPROXY {}".format(mode, msg)
             )
 
-    @asyncio.coroutine
-    def synproxy_add_connection(
+    async def synproxy_add_connection(
         self, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale, timeout=1
     ):
-        _ret = yield from self.synproxy_sync_connection(
+        _ret = await self.synproxy_sync_connection(
             "mod", ipaddr, port, proto, tcpmss, tcpsack, tcpwscale, timeout
         )
         return _ret
 
-    @asyncio.coroutine
-    def synproxy_del_connection(self, ipaddr, port, proto, timeout=1):
-        _ret = yield from self.synproxy_sync_connection(
+    async def synproxy_del_connection(self, ipaddr, port, proto, timeout=1):
+        _ret = await self.synproxy_sync_connection(
             "del", ipaddr, port, proto, 0, 0, 0, timeout
         )
         return _ret
@@ -1265,43 +1254,40 @@ class SynproxyClient(asyncio.Protocol):
         self.monitor.data = exc
         self.monitor.set()
 
-    @asyncio.coroutine
-    def terminated(self):
-        yield from self.monitor.wait()
+    async def terminated(self):
+        await self.monitor.wait()
         try:
             # Cancel worker task
-            yield from self.queue.put(None)
+            await self.queue.put(None)
             self._worker_task.cancel()
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         except Exception as e:
             self._logger.exception(e)
         return self.monitor.data
 
-    @asyncio.coroutine
-    def sendrecv_message(self, mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale):
+    async def sendrecv_message(self, mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale):
         _t = self.loop.time()
         waiter = asyncio.Event()
         # Add request to the message queue
-        yield from self.queue.put(
+        await self.queue.put(
             (waiter, mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale)
         )
         # Wait until a response has been received
-        yield from waiter.wait()
+        await waiter.wait()
         # Return success of the operation / True or False
         return waiter.data
 
-    @asyncio.coroutine
-    def worker_queue(self):
+    async def worker_queue(self):
         self._logger.info("Starting SYNPROXY connection worker")
         while True:
             # Make sure the connection is always open!
             if self.transport is None:
                 self._logger.debug("Socket connection not ready yet!")
-                yield from asyncio.sleep(1)
+                await asyncio.sleep(1)
                 continue
             try:
                 # Dequeue a request
-                data_q = yield from self.queue.get()
+                data_q = await self.queue.get()
                 waiter, mode, ipaddr, port, proto, tcpmss, tcpsack, tcpwscale = data_q
                 self.queue.task_done()
                 # self._logger.debug('Dequeued request! {}({})'.format(mode, (ipaddr, port, proto, tcpmss, tcpsack, tcpwscale)))
