@@ -132,10 +132,10 @@ ip netns exec router iptables -t raw    -A PREROUTING -i wan0 -p tcp -m tcp --sy
 ip netns exec router iptables -t filter -F
 ip netns exec router iptables -t filter -A FORWARD -i wan0 -o wan1 -p tcp -m tcp -m conntrack --ctstate INVALID,UNTRACKED -j SYNPROXY --sack-perm --timestamp --wscale 7 --mss 1460
 ip netns exec router iptables -t filter -A FORWARD -p tcp -m conntrack --ctstate INVALID -j DROP
-
+# Enable BIND resolver
+ip netns exec router named -4 -c /etc/bind/router.named.conf
 # Enable dnsmasq forwarding for gwa.demo domain and use upstream resolvers by default
-ip netns exec router dnsmasq --server=/gwa.demo/100.64.1.130         \
-                             --server=/cname-gwa.demo/100.64.1.130   \
+ip netns exec router dnsmasq --server=/demo/127.0.0.1#54             \
                              --server=8.8.8.8 --server=8.8.4.4       \
                              --server=10.0.2.3                       \
                              --pid-file=/var/run/router.dnsmasq.pid  \

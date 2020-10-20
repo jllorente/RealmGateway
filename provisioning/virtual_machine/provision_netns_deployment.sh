@@ -8,7 +8,7 @@ apt install -y apt-transport-https && apt update
 apt install -y build-essential git nano python3-dev python3-pip ipython3 libnetfilter-queue-dev libnfnetlink-dev
 apt install -y libxtables-dev libip4tc-dev libip6tc-dev automake bison flex libmnl-dev libnftnl-dev libtool
 apt install -y iptables ipset bridge-utils conntrack python3-yaml openvswitch-switch openvswitch-vtep
-apt install -y dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
+apt install -y bind9 dnsutils dnsmasq curl htop ethtool git tmux tree psmisc tmux tcpdump iperf hping3 lksctp-tools
 
 python3 -m pip install --upgrade testresources pip setuptools
 python3 -m pip install --upgrade --use-feature=2020-resolver aiohttp dnspython==1.16.0 python-iptables pyroute2 ryu scapy
@@ -43,6 +43,10 @@ user=dnsmasq
 pid-file=/var/run/dnsmasq/dnsmasq.pid
 log-facility=/var/log/dnsmasq
 EOF
+
+# Stop and disable BIND
+systemctl stop    named.service
+systemctl disable named.service
 
 # Restart dnsmasq with new configuration
 systemctl enable  dnsmasq.service

@@ -30,15 +30,6 @@ Vagrant.configure(2) do |config|
             provider.customize ["modifyvm", :id, "--vtxvpid", "on", "--vtxux", "on"]
         end
 
-        ### Libvirt
-        #node.vm.provider "libvirt" do |provider|
-        #    provider.cpus = 6
-        #    provider.memory = "3072"
-        #    provider.cpu_model = "host-passthrough"
-        #    #provider.nic_model_type = "e1000"
-        #    provider.storage :file, :size => '25G', :type => 'raw'
-        #end
-
         # Create port forwarding for SSH
         node.vm.network "forwarded_port", guest: 22,  host: 5555, host_ip: "127.0.0.1", id: "ssh"
 

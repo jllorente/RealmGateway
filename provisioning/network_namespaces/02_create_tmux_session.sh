@@ -67,12 +67,11 @@ echo "Initializing RealmGateway gwa.demo "
 sleep 10
 
 tmux select-pane -t 1
-# Workaround the lack of recursive resolver
-tmux send-keys 'ping $(dig icmp.test.gwa.demo +short) -c 3' Enter
+tmux send-keys 'ping icmp.test.gwa.demo -c 3' Enter
 tmux select-pane -t 2
 tmux send-keys 'cd / && python3 -m http.server 8008' Enter
 tmux select-pane -t 1
-tmux send-keys 'curl http://$(dig test.gwa.demo +short):8008/etc/hostname' Enter
+tmux send-keys 'curl http://test.gwa.demo:8008/etc/hostname' Enter
 
 ### Select pane 3 // public
 tmux select-pane -t 1

@@ -70,9 +70,11 @@ ip link del dev ns-lan0-gwa
 # Remove the namespaces
 for netns in router public gwa testgwa; do ip netns del $netns &> /dev/null; done
 
-# Kill dnsmasq running in router netns and cleanup pid file
+# Kill dnsmasq & BIND running in router netns and cleanup pid file
 pkill -F /var/run/router.dnsmasq.pid &> /dev/null || true
 rm       /var/run/router.dnsmasq.pid &> /dev/null || true
+pkill -F /var/cache/bind/router.named.pid &> /dev/null || true
+rm       /var/cache/bind/router.named.pid &> /dev/null || true
 
 # Destroy OpenvSwitch instance created by RealmGateway
 ovs-vsctl --if-exists del-br ovs-ces
