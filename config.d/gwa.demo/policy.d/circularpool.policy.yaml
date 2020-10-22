@@ -4,8 +4,8 @@ CIRCULARPOOL:
         - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.0.1', '100.64.1.1', '100.64.2.1']}
         - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.248.0', '100.64.248.1', '100.64.248.2']}
         - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.249.0', '100.64.249.1', '100.64.249.2']}
-        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.250.0', '100.64.250.1', '100.64.250.2']}
-        - {'initial_reputation': 1.0, 'sla': true,  'nodes': ['100.64.251.0', '100.64.251.1', '100.64.251.2']}
+        - {'initial_reputation': 1.0, 'sla': false,  'nodes': ['100.64.250.0', '100.64.250.1', '100.64.250.2']}
+        - {'initial_reputation': 1.0, 'sla': false,  'nodes': ['100.64.251.0', '100.64.251.1', '100.64.251.2']}
         - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.252.0', '100.64.252.1', '100.64.252.2']}
         - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.253.0', '100.64.253.1', '100.64.253.2']}
         - {'initial_reputation': 1.0, 'sla': false, 'nodes': ['100.64.254.0', '100.64.254.1', '100.64.254.2']}
